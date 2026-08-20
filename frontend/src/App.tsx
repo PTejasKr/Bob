@@ -68,15 +68,18 @@ function App() {
   }
 
   const handleStop = async () => {
-    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' })
+    // MediaRecorder defaults to webm/opus in Chrome; Sarvam supports webm — send as webm
+    const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm'
+    const ext = mimeType.includes('webm') ? 'webm' : mimeType.includes('ogg') ? 'ogg' : 'wav'
+    const audioBlob = new Blob(audioChunksRef.current, { type: mimeType })
     const formData = new FormData()
-    formData.append('audio', audioBlob, 'recording.wav')
+    formData.append('audio', audioBlob, `recording.${ext}`)
 
     setLoading(true)
     setError(null)
     try {
-      // Assuming backend is running on 8001
-      const response = await fetch('http://127.0.0.1:8001/api/v1/voice/query', {
+      const base = (import.meta as any).env?.VITE_API_BASE || 'http://127.0.0.1:8000'
+      const response = await fetch(`${base}/api/v1/voice/query`, {
         method: 'POST',
         body: formData,
       })

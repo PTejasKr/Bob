@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice RAG | Ultra Fast</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Three.js for Premium Visuals -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+</head>
+<body>
+    <!-- Three.js Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div class="app-container">
+        <!-- Top Nav -->
+        <nav class="top-nav">
+            <div class="logo">VOICE<span style="font-weight: 300;">RAG</span></div>
+            <button id="menu-btn" class="menu-button">
+                <i data-lucide="menu"></i>
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="hero-section">
+                <h1 class="hero-title">Speak Your Query</h1>
+                <p class="hero-subtitle">Lightning fast on-device transcription & RAG</p>
+            </div>
+
+            <!-- Mic Container -->
+            <div class="record-container">
+                <button id="mic-btn" class="record-button">
+                    <i data-lucide="mic" id="mic-icon"></i>
+                </button>
+                <p id="record-status" class="record-status">Click to transcribe</p>
+            </div>
+
+            <!-- Results Section (Hidden initially) -->
+            <div id="results-container" class="results-container hidden">
+                <div class="transcript-box slide-up">
+                    <span class="label">Transcript</span>
+                    <p id="transcript-text">...</p>
+                </div>
+
+                <div class="answer-box slide-up" style="animation-delay: 0.1s;">
+                    <div class="answer-header">
+                        <span class="label">Answer</span>
+                        <span class="status-badge grounded">Grounded</span>
+                    </div>
+                    <p id="answer-text">...</p>
+                </div>
+
+                <div class="metrics-box slide-up" style="animation-delay: 0.2s;">
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <span class="metric-name">RAG Search</span>
+                            <span class="metric-value" id="metric-rag">0ms</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-name">LLM Generation</span>
+                            <span class="metric-value" id="metric-llm">0ms</span>
+                        </div>
+                        <div class="metric-item total">
+                            <span class="metric-name">Total Backend Latency</span>
+                            <span class="metric-value" id="metric-total">0ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Berlix Vertical Menu Overlay -->
+    <div id="menu-overlay" class="menu-overlay">
+        <div class="menu-backdrop"></div>
+        <div class="menu-content">
+            <div class="menu-header">
+                <h3>Navigation</h3>
+                <button id="close-menu-btn" class="close-button">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="vertical-nav">
+                <a href="#" class="nav-item">
+                    <i data-lucide="info"></i>
+                    <span>About Us</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i data-lucide="database"></i>
+                    <span>Dataset Docs</span>
+                </a>
+                <a href="https://github.com/PTejasKr/Bob.git" target="_blank" class="nav-item">
+                    <i data-lucide="git-branch"></i>
+                    <span>GitHub</span>
+                </a>
+            </div>
+            <div class="menu-footer">
+                <p>&copy; 2026 Hacker House</p>
+                <p class="version">v2.0.0 (Ultra-Fast)</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
