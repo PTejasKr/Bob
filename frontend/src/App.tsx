@@ -76,7 +76,7 @@ function App() {
     setError(null)
     try {
       // Assuming backend is running on 8001
-      const response = await fetch('http://localhost:8001/api/v1/voice/query', {
+      const response = await fetch('http://127.0.0.1:8001/api/v1/voice/query', {
         method: 'POST',
         body: formData,
       })
