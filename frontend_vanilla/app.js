@@ -24,10 +24,14 @@ let isListening = false;
 let isProcessing = false;
 let liveTranscript = '';
 let interimRowEl = null;
+const wallpaperBobStage = document.getElementById('wallpaper-bob-stage');
 
 function togglePokedex() {
   const isHidden = pokedexModal.classList.toggle('hidden');
   pokeballLauncher.classList.toggle('is-open', !isHidden);
+  if (wallpaperBobStage) {
+    wallpaperBobStage.style.display = isHidden ? 'flex' : 'none';
+  }
 }
 
 pokeballLauncher.addEventListener('click', togglePokedex);
@@ -445,10 +449,10 @@ async function submitQuery(queryText) {
   rightWingLabel.textContent = 'VOICE ORB';
 }
 
-// Fluid Text Interactive Physics for BOB
-const fluidBobContainer = document.getElementById('fluid-bob-container');
-if (fluidBobContainer) {
-  const chars = fluidBobContainer.querySelectorAll('.fluid-text-char');
+// Fluid Text Interactive Physics
+function setupFluidText(container) {
+  if (!container) return;
+  const chars = container.querySelectorAll('.fluid-text-char');
   let charWidths = [];
   let totalNaturalWidth = 0;
   let isMeasured = false;
@@ -456,9 +460,9 @@ if (fluidBobContainer) {
   let currentX = -9999;
   let targetIntensity = 0;
   let currentIntensity = 0;
-  const maxScale = 2.6;
-  const radius = 180;
-  const stiffness = 0.18;
+  const maxScale = 2.4;
+  const radius = 220;
+  const stiffness = 0.16;
 
   function measureChars() {
     chars.forEach((c) => (c.style.transform = 'none'));
@@ -477,7 +481,7 @@ if (fluidBobContainer) {
   window.addEventListener('resize', measureChars);
 
   function fluidLoop() {
-    if (isMeasured && fluidBobContainer.offsetParent !== null) {
+    if (isMeasured && container.offsetParent !== null) {
       currentX += (targetX - currentX) * stiffness;
       currentIntensity += (targetIntensity - currentIntensity) * 0.08;
 
@@ -514,14 +518,17 @@ if (fluidBobContainer) {
 
   fluidLoop();
 
-  fluidBobContainer.addEventListener('mousemove', (e) => {
-    const rect = fluidBobContainer.getBoundingClientRect();
+  container.addEventListener('mousemove', (e) => {
+    const rect = container.getBoundingClientRect();
     targetX = e.clientX - rect.left;
     if (targetIntensity === 0) currentX = targetX;
     targetIntensity = 1;
   });
 
-  fluidBobContainer.addEventListener('mouseleave', () => {
+  container.addEventListener('mouseleave', () => {
     targetIntensity = 0;
   });
 }
+
+setupFluidText(document.getElementById('fluid-bob-container'));
+setupFluidText(document.getElementById('wallpaper-fluid-bob-container'));

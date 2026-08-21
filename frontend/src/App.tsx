@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { MoreHorizontal, X } from 'lucide-react'
 import { PokedexChassis } from './components/PokedexChassis'
 import { FloatingPokeballBadge } from './components/FloatingPokeballBadge'
+import { FluidText } from './components/FluidText'
 import type { ChatMessage } from './components/PokedexScreenChat'
 import type { RagStage } from './components/LinearRagLoader'
 import './App.css'
@@ -31,7 +32,7 @@ interface VoiceQueryResponse {
 }
 
 function App() {
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [liveTranscript, setLiveTranscript] = useState('')
@@ -417,6 +418,20 @@ function App() {
         <source src="/background.mp4" type="video/mp4" />
       </video>
       <div className="app-wallpaper-overlay" />
+
+      {/* Central Fluid Text BOB over Snorlax in wallpaper */}
+      {!isOpen && (
+        <div className="wallpaper-central-bob-stage">
+          <FluidText
+            text="BOB"
+            className="wallpaper-fluid-bob-hero"
+            maxScale={2.0}
+            radius={200}
+            stiffness={0.15}
+            fadeDuration={700}
+          />
+        </div>
+      )}
 
       {/* Floating Pokeball Badge */}
       <FloatingPokeballBadge

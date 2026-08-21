@@ -20,43 +20,27 @@
         </video>
         <div class="app-wallpaper-overlay"></div>
 
+        <!-- Central Fluid BOB over Snorlax in Wallpaper -->
+        <div id="wallpaper-bob-stage" class="wallpaper-central-bob-stage" style="display:none;">
+            <div id="wallpaper-fluid-bob-container" class="fluid-text-container wallpaper-fluid-bob-hero">
+                <div class="fluid-text-animated opacity-100">
+                    <span class="fluid-text-char">B</span>
+                    <span class="fluid-text-char">O</span>
+                    <span class="fluid-text-char">B</span>
+                </div>
+                <span class="fluid-text-placeholder">BOB</span>
+            </div>
+        </div>
+
         <!-- Floating Pokeball Launcher Badge -->
         <div id="pokeball-launcher" class="floating-pokeball-launcher is-open" title="Toggle Pokédex (or press Spacebar)">
-            <div class="scalloped-badge-wrap">
-                <svg viewBox="0 0 100 100" class="scalloped-badge-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <radialGradient id="badgeDarkGrad" cx="50%" cy="50%" r="50%">
-                            <stop offset="0%" stopColor="#252528" />
-                            <stop offset="70%" stopColor="#17181c" />
-                            <stop offset="100%" stopColor="#0d0e11" />
-                        </radialGradient>
-                    </defs>
-                    <path d="
-                        M 50 4
-                        C 58 4, 62 10, 68 14
-                        C 74 18, 81 18, 86 24
-                        C 91 30, 90 38, 93 45
-                        C 96 52, 93 60, 90 67
-                        C 87 74, 82 80, 75 84
-                        C 68 88, 62 92, 54 94
-                        C 46 96, 40 92, 33 88
-                        C 26 84, 19 80, 15 73
-                        C 11 66, 9 58, 10 50
-                        C 11 42, 13 34, 18 28
-                        C 23 22, 30 18, 37 14
-                        C 44 10, 42 4, 50 4
-                        Z
-                    " fill="url(#badgeDarkGrad)" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5" />
-                    <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" />
-                </svg>
-                <div class="pokeball-3d-flipper">
-                    <div class="inner-pokeball-disc">
-                        <div class="pokeball-top-half"></div>
-                        <div class="pokeball-bottom-half"></div>
-                        <div class="pokeball-center-band"></div>
-                        <div class="pokeball-center-btn">
-                            <div class="pokeball-inner-core"></div>
-                        </div>
+            <div class="pokeball-3d-flipper">
+                <div class="inner-pokeball-disc">
+                    <div class="pokeball-top-half"></div>
+                    <div class="pokeball-bottom-half"></div>
+                    <div class="pokeball-center-band"></div>
+                    <div class="pokeball-center-btn">
+                        <div class="pokeball-inner-core"></div>
                     </div>
                 </div>
             </div>
