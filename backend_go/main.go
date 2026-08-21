@@ -16,6 +16,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/joho/godotenv"
 )
 
 // Document structure
@@ -35,13 +36,19 @@ var (
 )
 
 func main() {
+
+	err := godotenv.Load("../.env")
+	if err != nil {
+		log.Println("No .env file found, relying on environment variables")
+	}
+
 	groqApiKey = os.Getenv("GROQ_API_KEY")
 	if groqApiKey == "" {
 		log.Fatal("GROQ_API_KEY is required")
 	}
 
 	log.Println("Starting Go Backend...")
-	err := loadCorpus("../data/corpus.jsonl")
+	err = loadCorpus("../data/corpus.jsonl")
 	if err != nil {
 		log.Fatalf("Failed to load corpus: %v", err)
 	}
@@ -103,12 +110,12 @@ func buildBM25() {
 		tokens := tokenize(doc.Text)
 		docLengths[i] = len(tokens)
 		totalLen += len(tokens)
-		
+
 		termCounts := make(map[string]int)
 		for _, token := range tokens {
 			termCounts[token]++
 		}
-		
+
 		for term, count := range termCounts {
 			if bm25Index[term] == nil {
 				bm25Index[term] = make(map[int]float64)
@@ -166,7 +173,7 @@ func searchBM25(query string, topK int) []Document {
 	for i := 0; i < topK && i < len(sortedScores); i++ {
 		results = append(results, corpus[sortedScores[i].id])
 	}
-	
+
 	// fallback if no results
 	if len(results) == 0 && len(corpus) > 0 {
 		results = append(results, corpus[0])
@@ -211,7 +218,7 @@ func handleQuery(c *fiber.Ctx) error {
 	// 1. RAG Search
 	startRag := time.Now()
 	docs := searchBM25(req.Query, 3)
-	
+
 	contextStr := ""
 	for i, doc := range docs {
 		contextStr += fmt.Sprintf("[%d] %s\n", i+1, doc.Text)
@@ -220,24 +227,27 @@ func handleQuery(c *fiber.Ctx) error {
 
 	// 2. Groq LLM
 	startLlm := time.Now()
-	
-	prompt := fmt.Sprintf("You are a nigga, a helpful AI assistant. Answer the user's query concisely using ONLY the context provided.\n\nContext:\n%s\n\nQuery: %s", contextStr, req.Query)
-	
+
+	prompt := fmt.Sprintf("You are Bob, a helpful AI assistant. Answer the user's query concisely using ONLY the context provided.\n\nContext:\n%s\n\nQuery: %s", contextStr, req.Query)
+
 	groqReq := GroqRequest{
-		Model: "llama3-8b-8192",
+		Model:     "llama3-8b-8192",
 		MaxTokens: 150,
 	}
-	groqReq.Messages = append(groqReq.Messages, struct{Role string `json:"role"`; Content string `json:"content"`}{Role: "user", Content: prompt})
-	
+	groqReq.Messages = append(groqReq.Messages, struct {
+		Role    string `json:"role"`
+		Content string `json:"content"`
+	}{Role: "user", Content: prompt})
+
 	reqBody, _ := json.Marshal(groqReq)
-	
+
 	httpReq, _ := http.NewRequest("POST", "https://api.groq.com/openai/v1/chat/completions", bytes.NewBuffer(reqBody))
 	httpReq.Header.Set("Authorization", "Bearer "+groqApiKey)
 	httpReq.Header.Set("Content-Type", "application/json")
-	
+
 	client := &http.Client{Timeout: 10 * time.Second}
 	httpResp, err := client.Do(httpReq)
-	
+
 	answer := "Error connecting to LLM"
 	if err == nil {
 		defer httpResp.Body.Close()
