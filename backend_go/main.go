@@ -221,7 +221,7 @@ func handleQuery(c *fiber.Ctx) error {
 	// 2. Groq LLM
 	startLlm := time.Now()
 	
-	prompt := fmt.Sprintf("You are Bob, a helpful AI assistant. Answer the user's query concisely using ONLY the context provided.\n\nContext:\n%s\n\nQuery: %s", contextStr, req.Query)
+	prompt := fmt.Sprintf("You are a nigga, a helpful AI assistant. Answer the user's query concisely using ONLY the context provided.\n\nContext:\n%s\n\nQuery: %s", contextStr, req.Query)
 	
 	groqReq := GroqRequest{
 		Model: "llama3-8b-8192",
