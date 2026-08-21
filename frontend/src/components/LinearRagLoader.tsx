@@ -23,16 +23,13 @@ export const LinearRagLoader: React.FC<LinearRagLoaderProps> = ({
     if (stage === 'idle') {
       setSimulatedProgress(0)
     } else if (stage === 'listening') {
-      // Gentle pulsing/breathing progress
       setSimulatedProgress(15)
     } else if (stage === 'retrieving') {
-      // Rapid ramp to 55% during vector search
       setSimulatedProgress(25)
       interval = setInterval(() => {
         setSimulatedProgress((p) => (p < 60 ? p + 5 : p))
       }, 40)
     } else if (stage === 'generating') {
-      // Ramp from 60% to 92% during LLM generation
       setSimulatedProgress(65)
       interval = setInterval(() => {
         setSimulatedProgress((p) => (p < 92 ? p + 3 : p))
@@ -86,7 +83,6 @@ export const LinearRagLoader: React.FC<LinearRagLoaderProps> = ({
     }
   }
 
-  // Number of discrete segments in the linear LED bar
   const totalSegments = 16
   const activeSegments = Math.round((simulatedProgress / 100) * totalSegments)
 
@@ -99,9 +95,7 @@ export const LinearRagLoader: React.FC<LinearRagLoaderProps> = ({
         </span>
       </div>
 
-      {/* Main Linear Bar Container */}
       <div className="linear-track">
-        {/* Continuous gradient fill with glow */}
         <div
           className="linear-fill"
           style={{
@@ -111,7 +105,6 @@ export const LinearRagLoader: React.FC<LinearRagLoaderProps> = ({
           }}
         />
 
-        {/* Segmented LED Tick Marks */}
         <div className="linear-segments-overlay">
           {Array.from({ length: totalSegments }).map((_, i) => {
             const isLit = totalSegments - 1 - i < activeSegments
@@ -127,13 +120,11 @@ export const LinearRagLoader: React.FC<LinearRagLoaderProps> = ({
           })}
         </div>
 
-        {/* Scanline beam when actively retrieving/generating */}
         {(stage === 'retrieving' || stage === 'generating') && (
           <div className="linear-scan-beam" />
         )}
       </div>
 
-      {/* Numerical Telemetry Metrics */}
       <div className="loader-telemetry">
         {stage === 'retrieving' && (
           <span className="telemetry-text">

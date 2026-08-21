@@ -1,9 +1,7 @@
-// Initialize Lucide Icons
 if (window.lucide) {
   lucide.createIcons();
 }
 
-// Elements
 const pokeballLauncher = document.getElementById('pokeball-launcher');
 const pokedexModal = document.getElementById('pokedex-modal');
 const minimizeBtn = document.getElementById('pokedex-minimize-btn');
@@ -16,20 +14,17 @@ const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
 const headerStatusText = document.getElementById('header-status-text');
 
-// RAG loader elements
 const ragStageLabel = document.getElementById('rag-stage-label');
 const ragFillBar = document.getElementById('rag-fill-bar');
 const ragTelemetryText = document.getElementById('rag-telemetry-text');
 const ledTop = document.getElementById('led-top');
 const ledBottom = document.getElementById('led-bottom');
 
-// State
 let isListening = false;
 let isProcessing = false;
 let liveTranscript = '';
 let interimRowEl = null;
 
-// Toggle Pokedex visibility
 function togglePokedex() {
   pokedexModal.classList.toggle('hidden');
 }
@@ -37,11 +32,8 @@ function togglePokedex() {
 pokeballLauncher.addEventListener('click', togglePokedex);
 minimizeBtn.addEventListener('click', togglePokedex);
 
-// -------------------------------------------------------------
-// DOT-MATRIX CANVAS ANIMATION LOOP (ChatGPT Blob + dotm-circular-8)
-// -------------------------------------------------------------
 const ctx = canvas.getContext('2d');
-let transitionProgress = 0; // 0 = idle white blob, 1 = dot-matrix active
+let transitionProgress = 0;
 let animTime = 0;
 
 function renderCanvas() {
@@ -58,7 +50,6 @@ function renderCanvas() {
 
   const t = animTime;
 
-  // 1. IDLE STATE: Smooth Organic White Morphing Blob
   if (transitionProgress < 0.98) {
     ctx.save();
     ctx.globalAlpha = 1 - transitionProgress;
@@ -106,7 +97,6 @@ function renderCanvas() {
     ctx.restore();
   }
 
-  // 2. ACTIVE STATE: DotMatrix Pixelated Glowing Equalizer (dotm-circular-8)
   if (transitionProgress > 0.02) {
     ctx.save();
     ctx.globalAlpha = transitionProgress;
@@ -170,9 +160,6 @@ function renderCanvas() {
 
 renderCanvas();
 
-// -------------------------------------------------------------
-// RAG LOADING BAR STAGE CONTROLLER
-// -------------------------------------------------------------
 function setRagStage(stage, latencyMs = null) {
   if (stage === 'idle') {
     ragStageLabel.textContent = 'STANDBY';
@@ -224,9 +211,6 @@ function setRagStage(stage, latencyMs = null) {
   }
 }
 
-// -------------------------------------------------------------
-// CHAT MESSAGE HELPERS (WhatsApp style with yellow text)
-// -------------------------------------------------------------
 function getCurrentTime() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
@@ -272,7 +256,6 @@ function appendBobMessage(text, latency = null) {
   chatViewport.appendChild(row);
   chatViewport.scrollTop = chatViewport.scrollHeight;
 
-  // Speak aloud
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(text);
@@ -287,9 +270,6 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// -------------------------------------------------------------
-// SPEECH RECOGNITION & API BACKEND QUERY
-// -------------------------------------------------------------
 let recognition = null;
 
 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -306,7 +286,6 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     blueStartBtn.classList.add('active-listening');
     setRagStage('listening');
 
-    // Create live interim transcript bubble
     interimRowEl = document.createElement('div');
     interimRowEl.className = 'wa-message-row user-row';
     interimRowEl.innerHTML = `
@@ -391,11 +370,9 @@ function toggleListening() {
   }
 }
 
-// Button click bindings
 blueStartBtn.addEventListener('click', startListening);
 dotmatrixBlobBtn.addEventListener('click', toggleListening);
 
-// Spacebar Keybind
 window.addEventListener('keydown', (e) => {
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
   if (e.code === 'Space' || e.key === ' ') {
@@ -406,7 +383,6 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// Chat Form submit
 chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const text = chatInput.value.trim();
@@ -416,7 +392,6 @@ chatForm.addEventListener('submit', (e) => {
   }
 });
 
-// Query Backend
 async function submitQuery(queryText) {
   appendUserMessage(queryText);
   isProcessing = true;

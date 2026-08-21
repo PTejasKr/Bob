@@ -36,24 +36,19 @@ export const PokedexChassis: React.FC<PokedexChassisProps> = ({
   return (
     <div className="pokedex-viewport-wrapper">
       <div className="pokedex-main-chassis">
-        {/* Top Hinge Bar with 3 Segment Ridges */}
         <div className="pokedex-top-hinge">
           <div className="hinge-ridge hinge-left" />
           <div className="hinge-ridge hinge-center" />
           <div className="hinge-ridge hinge-right" />
         </div>
 
-        {/* Main Body Section */}
         <div className="pokedex-body-grid">
-          {/* 1. LEFT PANEL (LEDs, Linear Loading Bar, Blue Power Button) */}
           <div className="pokedex-left-column">
-            {/* Top Dual Status LEDs */}
             <div className="pokedex-led-cluster">
               <div className={`pokedex-led led-top ${isProcessing ? 'pulsing-fast' : 'lit-green'}`} />
               <div className={`pokedex-led led-bottom ${isListening ? 'lit-amber' : isProcessing ? 'lit-cyan' : 'lit-green'}`} />
             </div>
 
-            {/* Linear RAG Loading / Extraction Bar */}
             <div className="pokedex-linear-section">
               <LinearRagLoader
                 stage={ragStage}
@@ -62,13 +57,10 @@ export const PokedexChassis: React.FC<PokedexChassisProps> = ({
                 totalTimeMs={latencyMetrics?.total}
               />
             </div>
-
           </div>
 
-          {/* 2. CENTER SCREEN FRAME */}
           <div className="pokedex-center-frame">
             <div className="pokedex-screen-bezel">
-              {/* Inner Black OLED Screen with WhatsApp Chat */}
               <div className="pokedex-inner-screen">
                 <PokedexScreenChat
                   messages={messages}
@@ -80,7 +72,6 @@ export const PokedexChassis: React.FC<PokedexChassisProps> = ({
                 />
               </div>
 
-              {/* Bottom Bezel Pill Capsule Slots */}
               <div className="pokedex-bottom-bezel-capsules">
                 <div className="bezel-pill-capsule left-capsule" />
                 <div className="bezel-pill-capsule right-capsule" />
@@ -88,7 +79,6 @@ export const PokedexChassis: React.FC<PokedexChassisProps> = ({
             </div>
           </div>
 
-          {/* 3. RIGHT WING POD (ChatGPT White Blob / DotMatrix Equalizer) */}
           <div className="pokedex-right-wing-pod">
             <div className="right-wing-housing">
               <div className="right-wing-inner-disc">

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { MoreHorizontal, X } from 'lucide-react'
 import { PokedexChassis } from './components/PokedexChassis'
 import { FloatingPokeballBadge } from './components/FloatingPokeballBadge'
 import type { ChatMessage } from './components/PokedexScreenChat'
@@ -36,11 +37,12 @@ function App() {
   const [liveTranscript, setLiveTranscript] = useState('')
   const [ragStage, setRagStage] = useState<RagStage>('idle')
   const [latestMetrics, setLatestMetrics] = useState<LatencyMetrics | undefined>(undefined)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome-1',
       sender: 'bob',
-      text: 'Hello, Trainer! I am Bob, your Voice RAG Pokédex. Press the Blue Button, click the White Orb, or tap Spacebar to ask anything.',
+      text: 'Hello, Trainer! I am Bob, your Voice RAG Pokédex. Click the Voice Orb or tap Spacebar to ask anything.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       grounded: true,
     },
@@ -54,18 +56,15 @@ function App() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
 
-  // Format current time
   const getCurrentTime = () =>
     new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-  // Play text-to-speech for Bob's response
   const speakResponse = useCallback((text: string) => {
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel() // Stop any previous speech
+      window.speechSynthesis.cancel()
       const utterance = new SpeechSynthesisUtterance(text)
       utterance.rate = 1.05
       utterance.pitch = 1.0
-      // Select natural English voice if available
       const voices = window.speechSynthesis.getVoices()
       const preferredVoice = voices.find(
         (v) => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha'))
@@ -75,7 +74,6 @@ function App() {
     }
   }, [])
 
-  // Process text query with backend API
   const handleQuery = useCallback(
     async (queryText: string) => {
       if (!queryText || queryText.trim().length === 0) return
@@ -83,7 +81,6 @@ function App() {
       const cleanQuery = queryText.trim()
       const timeStr = getCurrentTime()
 
-      // Add user message
       const userMsgId = `user-${Date.now()}`
       setMessages((prev) => [
         ...prev,
@@ -101,7 +98,6 @@ function App() {
       const startTime = performance.now()
 
       try {
-        // Stage 1: Retrieval ramp
         setTimeout(() => {
           setRagStage((s) => (s === 'retrieving' ? 'generating' : s))
         }, 120)
@@ -134,7 +130,6 @@ function App() {
         setLatestMetrics(lm)
         setRagStage('done')
 
-        // Add Bob's response message
         const bobMsgId = `bob-${Date.now()}`
         const answer = data.answer || "I couldn't find a matching entry in the database."
 
@@ -159,7 +154,6 @@ function App() {
         setLiveTranscript('')
         liveTranscriptRef.current = ''
 
-        // Speak aloud
         speakResponse(answer)
       } catch (err: any) {
         console.error('Query error:', err)
@@ -184,7 +178,6 @@ function App() {
     [speakResponse]
   )
 
-  // Fall back to the backend recorder when browser speech recognition is unavailable.
   const handleRecordedVoice = useCallback(
     async (audioBlob: Blob) => {
       setIsProcessing(true)
@@ -257,11 +250,10 @@ function App() {
     [speakResponse]
   )
 
-  // Start Speech Recognition & Audio stream
   const startSpeechRecognition = useCallback(() => {
     if (isListeningRef.current || isProcessing) return
 
-    setIsOpen(true) // Ensure Pokédex is open
+    setIsOpen(true)
     setLiveTranscript('')
     liveTranscriptRef.current = ''
     sessionTranscriptRef.current = ''
@@ -270,7 +262,6 @@ function App() {
     isListeningRef.current = true
     setRagStage('listening')
 
-    // Web Speech API
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (SpeechRecognition) {
       try {
@@ -302,10 +293,6 @@ function App() {
           console.warn('Speech recognition error:', event.error)
         }
 
-        recognition.onend = () => {
-          // The recorder is authoritative. Browser speech is only a live preview.
-        }
-
         recognitionRef.current = recognition
         recognition.start()
       } catch (e) {
@@ -313,7 +300,6 @@ function App() {
       }
     }
 
-    // MediaRecorder stream backup
     if (navigator.mediaDevices?.getUserMedia) {
       navigator.mediaDevices
         .getUserMedia({ audio: true })
@@ -375,7 +361,6 @@ function App() {
     }
   }, [isProcessing, handleRecordedVoice])
 
-  // Stop Speech Recognition
   const stopSpeechRecognition = useCallback(() => {
     isListeningRef.current = false
     setIsListening(false)
@@ -395,7 +380,6 @@ function App() {
     }
   }, [])
 
-  // Toggle speech input
   const toggleSpeechInput = useCallback(() => {
     if (isListening) {
       stopSpeechRecognition()
@@ -404,10 +388,8 @@ function App() {
     }
   }, [isListening, startSpeechRecognition, stopSpeechRecognition])
 
-  // Spacebar key listener (triggers Bob startup / mic input)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is actively typing in a text input or textarea
       const target = e.target as HTMLElement
       if (
         target &&
@@ -432,13 +414,11 @@ function App() {
 
   return (
     <div className="pokedex-app-root">
-      {/* Primary Minimal Page with Floating Pokeball Badge */}
       <FloatingPokeballBadge
         isOpen={isOpen}
         onClick={() => setIsOpen((prev) => !prev)}
       />
 
-      {/* Main Pokédex Modal / View */}
       {isOpen && (
         <div className="pokedex-modal-stage">
           <PokedexChassis
@@ -453,6 +433,50 @@ function App() {
             onPlaySpeech={speakResponse}
           />
         </div>
+      )}
+
+      <button
+        className="history-toggle"
+        onClick={() => setIsHistoryOpen((prev) => !prev)}
+        aria-label={isHistoryOpen ? 'Close request history' : 'Open request history'}
+        title={isHistoryOpen ? 'Close request history' : 'Request history'}
+      >
+        {isHistoryOpen ? <X size={18} /> : <MoreHorizontal size={20} />}
+      </button>
+
+      {isHistoryOpen && (
+        <aside className="request-history" aria-label="Request history">
+          <div className="request-history-header">
+            <span>REQUEST HISTORY</span>
+            <button
+              className="request-history-close"
+              onClick={() => setIsHistoryOpen(false)}
+              aria-label="Close request history"
+            >
+              <X size={15} />
+            </button>
+          </div>
+          <div className="request-history-list">
+            {messages.filter((message) => message.sender === 'user').length === 0 ? (
+              <p className="request-history-empty">No requests yet.</p>
+            ) : (
+              messages
+                .filter((message) => message.sender === 'user')
+                .slice()
+                .reverse()
+                .map((message) => (
+                  <button
+                    className="request-history-item"
+                    key={message.id}
+                    onClick={() => setIsHistoryOpen(false)}
+                  >
+                    <span className="request-history-time">{message.timestamp}</span>
+                    <span className="request-history-text">{message.text}</span>
+                  </button>
+                ))
+            )}
+          </div>
+        </aside>
       )}
     </div>
   )

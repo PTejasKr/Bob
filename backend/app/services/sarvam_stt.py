@@ -4,13 +4,15 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Persistent client — reused across requests, keep-alive, ~5-15ms saved per call
 _client: httpx.AsyncClient | None = None
 
 def _get_client() -> httpx.AsyncClient:
     global _client
     if _client is None or _client.is_closed:
-        _client = httpx.AsyncClient(timeout=httpx.Timeout(8.0, connect=2.0), limits=httpx.Limits(max_keepalive_connections=10, max_connections=20))
+        _client = httpx.AsyncClient(
+            timeout=httpx.Timeout(8.0, connect=2.0),
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=20)
+        )
     return _client
 
 async def transcribe_audio(audio_data: bytes, filename: str = "audio.wav", content_type: str | None = None) -> str:
@@ -21,8 +23,7 @@ async def transcribe_audio(audio_data: bytes, filename: str = "audio.wav", conte
     headers = {
         "api-subscription-key": settings.SARVAM_API_KEY
     }
-    # Sarvam auto-detects; use unknown + saaras:v3 for best latency/accuracy
-    # Detect mime from filename; webm from MediaRecorder is supported
+    
     mime = content_type if content_type and content_type.startswith("audio/") else "audio/wav"
     if ";" in mime:
         mime = mime.split(";", 1)[0]
@@ -35,6 +36,7 @@ async def transcribe_audio(audio_data: bytes, filename: str = "audio.wav", conte
         mime = "audio/m4a"
     elif (not content_type or not content_type.startswith("audio/")) and lower.endswith(".ogg"):
         mime = "audio/ogg"
+
     files = {
         "file": (filename, audio_data, mime)
     }

@@ -1,7 +1,6 @@
 import json
 import hashlib
 import logging
-from functools import lru_cache
 from groq import AsyncGroq
 from app.core.config import settings
 
@@ -14,7 +13,6 @@ OUTPUT SCHEMA:
 {{"answer":"string","citations":[{{"chunk_id":"string","support":"string"}}],"grounded":true,"confidence":0.0}}
 """
 
-# Lazy client — avoids import-time failure if key not yet loaded
 _client: AsyncGroq | None = None
 
 _MODEL_REMAP = {
@@ -32,7 +30,6 @@ def _get_client() -> AsyncGroq:
         _client = AsyncGroq(api_key=settings.LLM_API_KEY)
     return _client
 
-# In-memory LRU cache for hot-path <200ms on repeated queries
 _CACHE: dict[str, dict] = {}
 _CACHE_ORDER: list[str] = []
 _CACHE_MAX = 128
@@ -56,7 +53,6 @@ def _cache_set(key: str, value: dict):
     _CACHE[key] = value
     _CACHE_ORDER.append(key)
 
-# Trim each chunk to ~400 chars (~100 tokens) to cut prompt from ~900 -> ~300 tokens
 _MAX_CHARS_PER_CHUNK = 420
 
 async def generate_answer(query: str, retrieved_context: list) -> dict:
@@ -65,7 +61,6 @@ async def generate_answer(query: str, retrieved_context: list) -> dict:
     if cached is not None:
         return cached
 
-    # Build compact context
     context_parts = []
     for ctx in retrieved_context:
         txt = ctx.get("text", "")

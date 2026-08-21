@@ -1,11 +1,45 @@
-venv/
-node_modules/
-__pycache__/
+# Environment & Secrets
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+token.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+.eslintcache
+
+# Databases & Cache
 data/*.db
 data/*.sqlite
 data/*.sqlite-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+
+# Logs & Temp
 *.log
 *.log.*
 *.exe
+*.dll
+*.so
+*.dylib
 .kilo/
+.tmp/
+.DS_Store
+Thumbs.db

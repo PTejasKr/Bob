@@ -18,12 +18,6 @@ class TextQueryRequest(BaseModel):
 
 @router.post("/query", response_model=VoiceQueryResponse)
 async def process_text_query(req: TextQueryRequest):
-    """
-    Primary pipeline: text -> hybrid retrieval -> LLM generation.
-    This is the hot path for latency benchmarking (no STT network hop).
-    Target: p50 < 200ms on warm cache (retrieval ~25ms + cached generation ~5ms).
-    Cold (first Groq call): ~350ms due to external LLM network — cache makes p95 <200ms.
-    """
     request_id = str(uuid.uuid4())
     t_start = time.perf_counter()
     metrics = LatencyMetrics()
@@ -40,18 +34,15 @@ async def process_text_query(req: TextQueryRequest):
             latency_ms=metrics,
         )
 
-    # Retrieval — offload sync CPU work to threadpool so event loop stays free
     t0 = time.perf_counter()
     store = get_store(settings)
     retrieved_context = await asyncio.to_thread(store.hybrid_search, query, req.top_k)
     metrics.retrieval = int((time.perf_counter() - t0) * 1000)
 
-    # Generation (with internal LRU cache → ~0-5ms on hot hit)
     t0 = time.perf_counter()
     gen_result = await generate_answer(query, retrieved_context)
     metrics.generation = int((time.perf_counter() - t0) * 1000)
 
-    # Validation
     t0 = time.perf_counter()
     valid_citations = []
     if "citations" in gen_result:

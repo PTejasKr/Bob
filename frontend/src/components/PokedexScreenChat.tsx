@@ -56,7 +56,6 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
 
   return (
     <div className="pokedex-screen-chat-container">
-      {/* Pokédex Screen Header */}
       <div className="screen-status-bar">
         <div className="status-left">
           <span className="pokedex-os-tag">PKMN-OS v4.2</span>
@@ -73,15 +72,13 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
         </div>
       </div>
 
-      {/* WhatsApp Message Feed */}
       <div className="chat-messages-viewport" ref={scrollRef}>
         {messages.length === 0 && !liveTranscript && !isProcessing && (
           <div className="chat-empty-state">
             <div className="pokeball-watermark" />
             <p className="empty-prompt-title">Pokédex Neural RAG Ready</p>
             <p className="empty-prompt-subtitle">
-              Press the <span className="highlight-blue">Blue Button</span>, click the{' '}
-              <span className="highlight-white">White Orb</span>, or press{' '}
+              Click the <span className="highlight-white">Voice Orb</span>, or press{' '}
               <kbd className="key-badge">Spacebar</kbd> to ask Bob anything.
             </p>
           </div>
@@ -95,10 +92,8 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
               className={`wa-message-row ${isUser ? 'user-row' : 'bob-row'}`}
             >
               <div className={`wa-bubble ${isUser ? 'wa-user-bubble' : 'wa-bob-bubble'}`}>
-                {/* Bubble Tail */}
                 <div className={`wa-bubble-tail ${isUser ? 'tail-right' : 'tail-left'}`} />
 
-                {/* Sender Tag */}
                 <div className="wa-bubble-header">
                   <span className="wa-sender-label">
                     {isUser ? 'TRAINER' : 'BOB [POKÉDEX]'}
@@ -114,12 +109,10 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
                   )}
                 </div>
 
-                {/* Message Content */}
                 <div className={`wa-bubble-text ${!isUser ? 'yellow-rag-text' : ''}`}>
                   {msg.text}
                 </div>
 
-                {/* Telemetry / Grounded Info for Bob Messages */}
                 {!isUser && msg.latency && (
                   <div className="wa-telemetry-badge">
                     {msg.grounded !== undefined && (
@@ -138,7 +131,6 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
                   </div>
                 )}
 
-                {/* Citations if available */}
                 {!isUser && msg.citations && msg.citations.length > 0 && (
                   <div className="wa-citations-list">
                     {msg.citations.map((c, idx) => (
@@ -150,7 +142,6 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
                   </div>
                 )}
 
-                {/* Bubble Footer / Timestamp + Blue Ticks */}
                 <div className="wa-bubble-footer">
                   <span className="wa-timestamp">{msg.timestamp}</span>
                   {isUser && <CheckCheck size={14} className="wa-blue-ticks" />}
@@ -160,7 +151,6 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
           )
         })}
 
-        {/* Live Speech Recognition Interim Bubble (Right-Side User Bubble) */}
         {(isListening || (isProcessing && liveTranscript)) && (
           <div className="wa-message-row user-row">
             <div className="wa-bubble wa-user-bubble interim-live-bubble">
@@ -181,7 +171,6 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
           </div>
         )}
 
-        {/* Processing Indicator Bubble (Left-Side Bob Bubble) */}
         {isProcessing && !liveTranscript && (
           <div className="wa-message-row bob-row">
             <div className="wa-bubble wa-bob-bubble processing-bubble">
@@ -200,7 +189,6 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
         )}
       </div>
 
-      {/* Bottom Compact Input Bar for typed questions */}
       <form className="pokedex-chat-input-bar" onSubmit={handleFormSubmit}>
         <input
           ref={inputRef}

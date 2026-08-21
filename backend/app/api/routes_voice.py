@@ -20,10 +20,9 @@ async def process_voice_query(audio: UploadFile = File(...)):
     t_start = time.perf_counter()
     metrics = LatencyMetrics()
     
-    # 1. Read Audio
     try:
         audio_data = await audio.read()
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=400, detail="Invalid audio file")
     if not audio_data:
         raise HTTPException(status_code=400, detail="Audio file is empty")
@@ -31,10 +30,8 @@ async def process_voice_query(audio: UploadFile = File(...)):
     if len(audio_data) > max_bytes:
         raise HTTPException(status_code=413, detail=f"Audio file exceeds {settings.MAX_AUDIO_MB} MB limit")
 
-    # 2. STT — external network call, dominates voice latency (typically 400-800ms)
     t0 = time.perf_counter()
     try:
-        # Use actual filename/mime so Sarvam can detect codec (webm from MediaRecorder)
         fname = audio.filename or "recording.webm"
         transcript = await transcribe_audio(audio_data, fname, audio.content_type)
     except ValueError as e:
@@ -46,7 +43,6 @@ async def process_voice_query(audio: UploadFile = File(...)):
     logger.info(f"[{request_id}] Transcript: {transcript}")
     
     if not transcript or len(transcript.strip()) < 2:
-        # Guardrail: empty transcript
         return VoiceQueryResponse(
             request_id=request_id,
             transcript=transcript,
@@ -57,22 +53,16 @@ async def process_voice_query(audio: UploadFile = File(...)):
             latency_ms=metrics
         )
 
-    # 3. Retrieval — offload sync embedding+FAISS to threadpool (primary pipeline <200ms target)
     t0 = time.perf_counter()
     store = get_store(settings)
     retrieved_context = await asyncio.to_thread(store.hybrid_search, transcript, 3)
     metrics.retrieval = int((time.perf_counter() - t0) * 1000)
-    
-    logger.info(f"[{request_id}] Retrieved {len(retrieved_context)} chunks")
 
-    # 4. Generation — with LRU cache hot hit ~5ms, cold ~250-400ms (Groq network)
     t0 = time.perf_counter()
     gen_result = await generate_answer(transcript, retrieved_context)
     metrics.generation = int((time.perf_counter() - t0) * 1000)
 
-    # 5. Validation/Guardrails (simple check)
     t0 = time.perf_counter()
-    # Check if citations are valid
     valid_citations = []
     if "citations" in gen_result:
         valid_chunk_ids = {c["chunk_id"] for c in retrieved_context}
@@ -81,8 +71,6 @@ async def process_voice_query(audio: UploadFile = File(...)):
                 valid_citations.append(Citation(**cit))
     
     metrics.validation = int((time.perf_counter() - t0) * 1000)
-    
-    # Total
     metrics.total = int((time.perf_counter() - t_start) * 1000)
     
     logger.info(f"[{request_id}] Completed in {metrics.total}ms (stt={metrics.stt}ms retrieval={metrics.retrieval}ms gen={metrics.generation}ms)")

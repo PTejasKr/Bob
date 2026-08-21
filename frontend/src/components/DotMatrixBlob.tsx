@@ -16,7 +16,7 @@ export const DotMatrixBlob: React.FC<DotMatrixBlobProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const animFrameRef = useRef<number | null>(null)
   const stateRef = useRef({
-    transitionProgress: 0, // 0 = idle blob, 1 = dot-matrix active
+    transitionProgress: 0,
     time: 0,
   })
 
@@ -38,7 +38,6 @@ export const DotMatrixBlob: React.FC<DotMatrixBlobProps> = ({
 
       ctx.clearRect(0, 0, width, height)
 
-      // Update state transitions smoothly
       const targetTransition = isListening || isProcessing ? 1 : 0
       stateRef.current.transitionProgress += (targetTransition - stateRef.current.transitionProgress) * 0.08
       stateRef.current.time += isListening ? 0.045 : isProcessing ? 0.06 : 0.02
@@ -46,14 +45,10 @@ export const DotMatrixBlob: React.FC<DotMatrixBlobProps> = ({
       const progress = stateRef.current.transitionProgress
       const t = stateRef.current.time
 
-      // -------------------------------------------------------------
-      // 1. IDLE STATE: Smooth Organic White Blob (ChatGPT / Siri style)
-      // -------------------------------------------------------------
       if (progress < 0.98) {
         ctx.save()
         ctx.globalAlpha = 1 - progress
 
-        // Blob outer glow
         const glowRad = 48 + Math.sin(t * 2) * 4
         const glowGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, glowRad)
         glowGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)')
@@ -66,7 +61,6 @@ export const DotMatrixBlob: React.FC<DotMatrixBlobProps> = ({
         ctx.arc(cx, cy, glowRad, 0, Math.PI * 2)
         ctx.fill()
 
-        // Organic morphing inner shape
         const points = 7
         const baseR = 30 + Math.sin(t * 1.5) * 3
         ctx.beginPath()
@@ -82,7 +76,6 @@ export const DotMatrixBlob: React.FC<DotMatrixBlobProps> = ({
           })
         }
 
-        // Draw smooth closed curve through points
         ctx.moveTo((coords[0].x + coords[points - 1].x) / 2, (coords[0].y + coords[points - 1].y) / 2)
         for (let i = 0; i < points; i++) {
           const next = coords[(i + 1) % points]
@@ -98,7 +91,6 @@ export const DotMatrixBlob: React.FC<DotMatrixBlobProps> = ({
         ctx.shadowBlur = 16
         ctx.fill()
 
-        // Subtle specular core
         ctx.beginPath()
         ctx.arc(cx - 6, cy - 6, 8, 0, Math.PI * 2)
         ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
@@ -107,14 +99,10 @@ export const DotMatrixBlob: React.FC<DotMatrixBlobProps> = ({
         ctx.restore()
       }
 
-      // -------------------------------------------------------------
-      // 2. ACTIVE STATE: DotMatrix Pixelated Glowing Loader (dotm-circular-8)
-      // -------------------------------------------------------------
       if (progress > 0.02) {
         ctx.save()
         ctx.globalAlpha = progress
 
-        // Outer radial ambient matrix glow
         const matrixGlow = ctx.createRadialGradient(cx, cy, 15, cx, cy, 62)
         matrixGlow.addColorStop(0, 'rgba(255, 255, 255, 0.35)')
         matrixGlow.addColorStop(0.5, 'rgba(100, 200, 255, 0.2)')
@@ -124,14 +112,12 @@ export const DotMatrixBlob: React.FC<DotMatrixBlobProps> = ({
         ctx.arc(cx, cy, 62, 0, Math.PI * 2)
         ctx.fill()
 
-        // Central matrix core dot
         ctx.fillStyle = '#ffffff'
         ctx.shadowColor = '#00e5ff'
         ctx.shadowBlur = 12
         const coreSize = 6 + Math.sin(t * 4) * 1.5
         ctx.fillRect(cx - coreSize / 2, cy - coreSize / 2, coreSize, coreSize)
 
-        // Concentric Rings of Matrix Pixel Dots (dotm-circular-8 pattern)
         const rings = [
           { radius: 14, count: 8, dotSize: 3.2, speed: 1.2 },
           { radius: 23, count: 12, dotSize: 3.5, speed: -0.9 },
@@ -148,7 +134,6 @@ export const DotMatrixBlob: React.FC<DotMatrixBlobProps> = ({
             const baseAngle = (i / count) * Math.PI * 2
             const angle = baseAngle + ringRotation
 
-            // Angular wave & radial modulation
             const wavePhase = Math.sin(t * 3.5 + baseAngle * 4 + rIdx * 1.2)
             const isDotActive = isProcessing 
               ? Math.sin(t * 5 + i * 0.8 + rIdx) > -0.2
@@ -170,13 +155,11 @@ export const DotMatrixBlob: React.FC<DotMatrixBlobProps> = ({
               ctx.shadowBlur = 10
             }
 
-            // Draw crisp pixelated square dot
             ctx.fillRect(px - size / 2, py - size / 2, size, size)
             ctx.restore()
           }
         })
 
-        // Radial crosshair ticks (subtle pixel matrix accent)
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)'
         ctx.lineWidth = 1.5
         for (let a = 0; a < 4; a++) {

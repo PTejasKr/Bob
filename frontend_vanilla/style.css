@@ -1,7 +1,3 @@
-/* ==========================================================================
-   POKÉDEX VOICE RAG UI (VANILLA)
-   ========================================================================== */
-
 :root {
   --bg-pure: #000000;
   --pokedex-red: #e51922;
@@ -54,7 +50,6 @@ html, body {
   user-select: none;
 }
 
-/* Floating Launcher (Image 2 style) */
 .floating-pokeball-launcher {
   position: fixed;
   bottom: 2rem;
@@ -145,7 +140,6 @@ html, body {
   box-shadow: 0 0 3px rgba(255, 255, 255, 0.9);
 }
 
-/* Pokédex Modal Stage (Image 3 style) */
 .pokedex-modal-stage {
   width: 100%;
   height: 100%;
@@ -231,7 +225,6 @@ html, body {
   min-height: 490px;
 }
 
-/* Left Panel */
 .pokedex-left-column {
   display: flex;
   flex-direction: column;
@@ -359,7 +352,6 @@ html, body {
 .telemetry-text.dim { color: #8b949e; }
 .telemetry-text.green { color: #00e676; }
 
-/* Blue Button */
 .pokedex-blue-button-container {
   display: flex;
   flex-direction: column;
@@ -406,7 +398,6 @@ html, body {
   color: #ffffff;
 }
 
-/* Center Screen Frame */
 .pokedex-center-frame {
   display: flex;
   flex-direction: column;
@@ -529,7 +520,6 @@ html, body {
   background-color: #00e676;
 }
 
-/* WhatsApp Message Feed & Yellow Text (Image 4 style) */
 .chat-messages-viewport {
   flex-grow: 1;
   overflow-y: auto;
@@ -668,7 +658,6 @@ html, body {
   cursor: pointer;
 }
 
-/* Right Wing Pod */
 .pokedex-right-wing-pod {
   display: flex;
   align-items: center;
@@ -722,7 +711,6 @@ html, body {
   color: #ffffff;
 }
 
-/* Responsive */
 @media (max-width: 820px) {
   .pokedex-body-grid {
     grid-template-columns: 100px 1fr 100px;
