@@ -3,104 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice RAG | Ultra Fast</title>
+    <title>Bob — Pokédex Voice RAG</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Three.js for Premium Visuals -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
 </head>
 <body>
-    <!-- Three.js Canvas Container -->
-    <div id="canvas-container"></div>
-
-    <!-- UI Overlay -->
-    <div class="app-container">
-        <!-- Top Nav -->
-        <nav class="top-nav">
-            <div class="logo">VOICE<span style="font-weight: 300;">RAG</span></div>
-            <button id="menu-btn" class="menu-button">
-                <i data-lucide="menu"></i>
-            </button>
-        </nav>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <div class="hero-section">
-                <h1 class="hero-title">Speak Your Query</h1>
-                <p class="hero-subtitle">Lightning fast on-device transcription & RAG</p>
-            </div>
-
-            <!-- Mic Container -->
-            <div class="record-container">
-                <button id="mic-btn" class="record-button">
-                    <i data-lucide="mic" id="mic-icon"></i>
-                </button>
-                <p id="record-status" class="record-status">Click to transcribe</p>
-            </div>
-
-            <!-- Results Section (Hidden initially) -->
-            <div id="results-container" class="results-container hidden">
-                <div class="transcript-box slide-up">
-                    <span class="label">Transcript</span>
-                    <p id="transcript-text">...</p>
-                </div>
-
-                <div class="answer-box slide-up" style="animation-delay: 0.1s;">
-                    <div class="answer-header">
-                        <span class="label">Answer</span>
-                        <span class="status-badge grounded">Grounded</span>
-                    </div>
-                    <p id="answer-text">...</p>
-                </div>
-
-                <div class="metrics-box slide-up" style="animation-delay: 0.2s;">
-                    <div class="metrics-grid">
-                        <div class="metric-item">
-                            <span class="metric-name">RAG Search</span>
-                            <span class="metric-value" id="metric-rag">0ms</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="metric-name">LLM Generation</span>
-                            <span class="metric-value" id="metric-llm">0ms</span>
-                        </div>
-                        <div class="metric-item total">
-                            <span class="metric-name">Total Backend Latency</span>
-                            <span class="metric-value" id="metric-total">0ms</span>
-                        </div>
+    <!-- App Root Container (Solid Pure Black) -->
+    <div class="pokedex-app-root">
+        <!-- Floating Pokeball Launcher Badge (Image 2 style) -->
+        <div id="pokeball-launcher" class="floating-pokeball-launcher" title="Toggle Pokédex (or press Spacebar)">
+            <div class="scalloped-badge-wrap">
+                <svg viewBox="0 0 100 100" class="scalloped-badge-svg" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="badgeDarkGrad" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stopColor="#252528" />
+                            <stop offset="70%" stopColor="#17181c" />
+                            <stop offset="100%" stopColor="#0d0e11" />
+                        </radialGradient>
+                    </defs>
+                    <path d="
+                        M 50 4
+                        C 58 4, 62 10, 68 14
+                        C 74 18, 81 18, 86 24
+                        C 91 30, 90 38, 93 45
+                        C 96 52, 93 60, 90 67
+                        C 87 74, 82 80, 75 84
+                        C 68 88, 62 92, 54 94
+                        C 46 96, 40 92, 33 88
+                        C 26 84, 19 80, 15 73
+                        C 11 66, 9 58, 10 50
+                        C 11 42, 13 34, 18 28
+                        C 23 22, 30 18, 37 14
+                        C 44 10, 42 4, 50 4
+                        Z
+                    " fill="url(#badgeDarkGrad)" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5" />
+                    <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" />
+                </svg>
+                <div class="inner-pokeball-disc">
+                    <div class="pokeball-top-half"></div>
+                    <div class="pokeball-bottom-half"></div>
+                    <div class="pokeball-center-band"></div>
+                    <div class="pokeball-center-btn">
+                        <div class="pokeball-inner-core"></div>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
 
-    <!-- Berlix Vertical Menu Overlay -->
-    <div id="menu-overlay" class="menu-overlay">
-        <div class="menu-backdrop"></div>
-        <div class="menu-content">
-            <div class="menu-header">
-                <h3>Navigation</h3>
-                <button id="close-menu-btn" class="close-button">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="vertical-nav">
-                <a href="#" class="nav-item">
-                    <i data-lucide="info"></i>
-                    <span>About Us</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <i data-lucide="database"></i>
-                    <span>Dataset Docs</span>
-                </a>
-                <a href="https://github.com/PTejasKr/Bob.git" target="_blank" class="nav-item">
-                    <i data-lucide="git-branch"></i>
-                    <span>GitHub</span>
-                </a>
-            </div>
-            <div class="menu-footer">
-                <p>&copy; 2026 Hacker House</p>
-                <p class="version">v2.0.0 (Ultra-Fast)</p>
+        <!-- Pokédex Stage Container (Image 3 style) -->
+        <div id="pokedex-modal" class="pokedex-modal-stage">
+            <div class="pokedex-viewport-wrapper">
+                <div class="pokedex-main-chassis">
+                    <!-- Top Hinge with 3 Segment Ridges -->
+                    <div class="pokedex-top-hinge">
+                        <div class="hinge-ridge hinge-left"></div>
+                        <div class="hinge-ridge hinge-center"></div>
+                        <div class="hinge-ridge hinge-right"></div>
+                        <button id="pokedex-minimize-btn" class="pokedex-close-btn" title="Minimize Pokédex">
+                            <i data-lucide="minimize-2"></i>
+                        </button>
+                    </div>
+
+                    <!-- Main Pokédex Grid -->
+                    <div class="pokedex-body-grid">
+                        <!-- Left Panel: LEDs, Linear RAG Progress Bar, Blue Startup Button -->
+                        <div class="pokedex-left-column">
+                            <div class="pokedex-led-cluster">
+                                <div id="led-top" class="pokedex-led led-top lit-green"></div>
+                                <div id="led-bottom" class="pokedex-led led-bottom lit-green"></div>
+                            </div>
+
+                            <!-- Linear Loading Bar for RAG Extraction -->
+                            <div class="pokedex-linear-section">
+                                <div id="rag-loader" class="pokedex-linear-loader idle">
+                                    <div class="loader-header">
+                                        <span class="loader-title">RAG PIPE</span>
+                                        <span id="rag-stage-label" class="loader-stage-tag">STANDBY</span>
+                                    </div>
+                                    <div class="linear-track">
+                                        <div id="rag-fill-bar" class="linear-fill"></div>
+                                        <div class="linear-segments-overlay">
+                                            <div class="linear-seg-notch"></div>
+                                            <div class="linear-seg-notch"></div>
+                                            <div class="linear-seg-notch"></div>
+                                            <div class="linear-seg-notch"></div>
+                                            <div class="linear-seg-notch"></div>
+                                            <div class="linear-seg-notch"></div>
+                                            <div class="linear-seg-notch"></div>
+                                            <div class="linear-seg-notch"></div>
+                                            <div class="linear-seg-notch"></div>
+                                            <div class="linear-seg-notch"></div>
+                                            <div class="linear-seg-notch"></div>
+                                            <div class="linear-seg-notch"></div>
+                                        </div>
+                                    </div>
+                                    <div class="loader-telemetry">
+                                        <span id="rag-telemetry-text" class="telemetry-text dim">READY</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Blue Startup Button (Starts Bob / Mic) -->
+                            <div class="pokedex-blue-button-container">
+                                <button id="blue-start-btn" class="pokedex-blue-btn" title="Start Bob (or press Spacebar)" aria-label="Start Bob">
+                                    <div class="blue-btn-inner">
+                                        <i data-lucide="power" class="blue-btn-icon"></i>
+                                    </div>
+                                </button>
+                                <span class="blue-btn-label">START BOB</span>
+                            </div>
+                        </div>
+
+                        <!-- Center Screen Bezel with WhatsApp Chat -->
+                        <div class="pokedex-center-frame">
+                            <div class="pokedex-screen-bezel">
+                                <div class="pokedex-inner-screen">
+                                    <div class="pokedex-screen-chat-container">
+                                        <!-- Top Status Header -->
+                                        <div class="screen-status-bar">
+                                            <div class="status-left">
+                                                <span class="pokedex-os-tag">PKMN-OS v4.2</span>
+                                                <span class="status-dot-live"></span>
+                                                <span class="status-agent-name">BOB • VOICE RAG</span>
+                                            </div>
+                                            <div class="status-right">
+                                                <span id="header-status-text" class="status-metric-hot">STANDBY</span>
+                                                <div class="battery-icon">
+                                                    <div class="battery-level"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- WhatsApp Chat Messages Viewport (Image 4 style) -->
+                                        <div id="chat-viewport" class="chat-messages-viewport">
+                                            <!-- Welcome Message from Bob in Yellow Text -->
+                                            <div class="wa-message-row bob-row">
+                                                <div class="wa-bubble wa-bob-bubble">
+                                                    <div class="wa-bubble-tail tail-left"></div>
+                                                    <div class="wa-bubble-header">
+                                                        <span class="wa-sender-label">BOB [POKÉDEX]</span>
+                                                    </div>
+                                                    <div class="wa-bubble-text yellow-rag-text">
+                                                        Hello, Trainer! I am Bob, your Voice RAG Pokédex. Press the Blue Button, click the White Orb, or tap Spacebar to ask anything.
+                                                    </div>
+                                                    <div class="wa-bubble-footer">
+                                                        <span class="wa-timestamp">Just now</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Bottom Quick Input Bar -->
+                                        <form id="chat-form" class="pokedex-chat-input-bar">
+                                            <input id="chat-input" type="text" placeholder="Ask Bob or speak (Spacebar)..." class="pokedex-text-input" autocomplete="off" />
+                                            <button id="chat-send-btn" type="submit" class="pokedex-send-btn" title="Send query">
+                                                <i data-lucide="send"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <!-- Dual Bezel Pill Slots -->
+                                <div class="pokedex-bottom-bezel-capsules">
+                                    <div class="bezel-pill-capsule left-capsule"></div>
+                                    <div class="bezel-pill-capsule right-capsule"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Wing Pod: ChatGPT White Blob / DotMatrix Equalizer -->
+                        <div class="pokedex-right-wing-pod">
+                            <div class="right-wing-housing">
+                                <div class="right-wing-inner-disc">
+                                    <div id="dotmatrix-blob-btn" class="dot-matrix-blob-container" role="button" tabindex="0" title="Tap or press Spacebar to speak">
+                                        <canvas id="dotmatrix-canvas" width="130" height="130" class="dot-matrix-canvas"></canvas>
+                                    </div>
+                                </div>
+                                <div id="right-wing-label" class="right-wing-label">VOICE ORB</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

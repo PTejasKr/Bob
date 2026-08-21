@@ -2,7 +2,7 @@ import asyncio
 import time
 import uuid
 import logging
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
+from fastapi import APIRouter, File, UploadFile, HTTPException
 from app.schemas.responses import VoiceQueryResponse, LatencyMetrics, Citation
 from app.services.sarvam_stt import transcribe_audio
 from app.services.generator import generate_answer
@@ -25,15 +25,22 @@ async def process_voice_query(audio: UploadFile = File(...)):
         audio_data = await audio.read()
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid audio file")
+    if not audio_data:
+        raise HTTPException(status_code=400, detail="Audio file is empty")
+    max_bytes = settings.MAX_AUDIO_MB * 1024 * 1024
+    if len(audio_data) > max_bytes:
+        raise HTTPException(status_code=413, detail=f"Audio file exceeds {settings.MAX_AUDIO_MB} MB limit")
 
     # 2. STT — external network call, dominates voice latency (typically 400-800ms)
     t0 = time.perf_counter()
     try:
         # Use actual filename/mime so Sarvam can detect codec (webm from MediaRecorder)
         fname = audio.filename or "recording.webm"
-        transcript = await transcribe_audio(audio_data, fname)
+        transcript = await transcribe_audio(audio_data, fname, audio.content_type)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=502, detail=str(e))
     metrics.stt = int((time.perf_counter() - t0) * 1000)
     
     logger.info(f"[{request_id}] Transcript: {transcript}")

@@ -14,7 +14,7 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing application resources...")
     # Pre-load vector store + warm embedding (first encode is 6x slower)
     get_store(settings)
-    logger.info("Primary pipeline ready — retrieval warm, target <200ms hot path")
+    logger.info("Primary pipeline ready - retrieval warm, target <200ms hot path")
     yield
     logger.info("Shutting down application...")
     # Close persistent STT client
@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
     except Exception:
         pass
 
-app = FastAPI(title="HH Goa 2026 - Voice RAG — Primary pipeline <200ms (hot)", lifespan=lifespan)
+app = FastAPI(title="Bob - HH Goa 2026 Voice RAG (Primary pipeline <200ms hot)", lifespan=lifespan, version="2.0.0")
 
 # CORS: allow all origins in dev; credentials must be False with wildcard
 cors_origins = ["*"] if settings.CORS_ORIGINS == "*" else [o.strip() for o in settings.CORS_ORIGINS.split(",")]

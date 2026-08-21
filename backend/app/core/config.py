@@ -1,9 +1,12 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Resolve project root (hhgoa-rag/) regardless of CWD
-_BACKEND_DIR = Path(__file__).resolve().parents[2]  # .../backend
+# Resolve the data root for both the repository layout and the Docker layout.
+# Locally this file is backend/app/core/config.py; in Docker it is /app/app/core/config.py.
+_BACKEND_DIR = Path(__file__).resolve().parents[2]
 _PROJECT_ROOT = _BACKEND_DIR.parent
+if (_BACKEND_DIR / "data").exists() and not (_PROJECT_ROOT / "data").exists():
+    _PROJECT_ROOT = _BACKEND_DIR
 _ENV_FILE = _PROJECT_ROOT / ".env"
 
 class Settings(BaseSettings):
@@ -34,15 +37,9 @@ class Settings(BaseSettings):
         for field in ("VECTOR_INDEX_PATH", "BM25_INDEX_PATH", "METADATA_DB_PATH"):
             val = getattr(self, field)
             if val and not Path(val).is_absolute():
-                # Strip leading ./ and resolve against project root
                 cleaned = val.lstrip("./").lstrip(".\\")
-                # If still starts with data/ keep it, else join
-                abs_path = _PROJECT_ROOT / cleaned if not Path(cleaned).is_absolute() else Path(cleaned)
-                # Handle case where env was ./data/... -> cleaned is data/...
-                if not abs_path.exists() and cleaned.startswith("data"):
-                    abs_path = _PROJECT_ROOT / cleaned
-                elif not abs_path.exists():
-                    abs_path = _PROJECT_ROOT / val.lstrip("/\\")
-                setattr(self, field, str(abs_path))
+                candidates = (_PROJECT_ROOT / cleaned, Path.cwd() / cleaned)
+                resolved = next((candidate for candidate in candidates if candidate.exists()), candidates[0])
+                setattr(self, field, str(resolved))
 
 settings = Settings()

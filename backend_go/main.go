@@ -37,8 +37,7 @@ var (
 func main() {
 	groqApiKey = os.Getenv("GROQ_API_KEY")
 	if groqApiKey == "" {
-		// Use the user's provided API key from earlier context
-		groqApiKey = os.Getenv("GROQ_API_KEY")
+		log.Fatal("GROQ_API_KEY is required")
 	}
 
 	log.Println("Starting Go Backend...")
