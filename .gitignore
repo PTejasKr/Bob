@@ -24,6 +24,11 @@ node_modules/
 frontend/dist/
 .eslintcache
 
+# Media & Videos
+*.mp4
+*.webm
+*.mov
+
 # Databases & Cache
 data/*.db
 data/*.sqlite

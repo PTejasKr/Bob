@@ -26,7 +26,8 @@ let liveTranscript = '';
 let interimRowEl = null;
 
 function togglePokedex() {
-  pokedexModal.classList.toggle('hidden');
+  const isHidden = pokedexModal.classList.toggle('hidden');
+  pokeballLauncher.classList.toggle('is-open', !isHidden);
 }
 
 pokeballLauncher.addEventListener('click', togglePokedex);
@@ -216,6 +217,11 @@ function getCurrentTime() {
 }
 
 function appendUserMessage(text) {
+  const centralBob = document.getElementById('central-bob-stage');
+  if (centralBob) {
+    centralBob.remove();
+  }
+
   const row = document.createElement('div');
   row.className = 'wa-message-row user-row';
   row.innerHTML = `
@@ -437,4 +443,85 @@ async function submitQuery(queryText) {
   appendBobMessage(`Error: ${lastError ? lastError.message : 'Could not reach backend on :8000'}`);
   isProcessing = false;
   rightWingLabel.textContent = 'VOICE ORB';
+}
+
+// Fluid Text Interactive Physics for BOB
+const fluidBobContainer = document.getElementById('fluid-bob-container');
+if (fluidBobContainer) {
+  const chars = fluidBobContainer.querySelectorAll('.fluid-text-char');
+  let charWidths = [];
+  let totalNaturalWidth = 0;
+  let isMeasured = false;
+  let targetX = -9999;
+  let currentX = -9999;
+  let targetIntensity = 0;
+  let currentIntensity = 0;
+  const maxScale = 2.6;
+  const radius = 180;
+  const stiffness = 0.18;
+
+  function measureChars() {
+    chars.forEach((c) => (c.style.transform = 'none'));
+    charWidths = Array.from(chars).map((c) => c.getBoundingClientRect().width);
+    if (charWidths.length === 0) return;
+    totalNaturalWidth = charWidths.reduce((a, b) => a + b, 0);
+    isMeasured = true;
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(measureChars);
+  } else {
+    measureChars();
+  }
+
+  window.addEventListener('resize', measureChars);
+
+  function fluidLoop() {
+    if (isMeasured && fluidBobContainer.offsetParent !== null) {
+      currentX += (targetX - currentX) * stiffness;
+      currentIntensity += (targetIntensity - currentIntensity) * 0.08;
+
+      let totalDesiredWidth = 0;
+      const desiredScales = [];
+
+      charWidths.forEach((w, i) => {
+        let offset = 0;
+        for (let j = 0; j < i; j++) offset += charWidths[j];
+        const charCenter = offset + w / 2;
+        const dist = Math.abs(charCenter - currentX);
+
+        let desiredScale = 1.0;
+        if (dist < radius) {
+          const normalized = dist / radius;
+          const curve = Math.cos(normalized * (Math.PI / 2));
+          desiredScale = 1 + (maxScale - 1) * curve * currentIntensity;
+        }
+        desiredScales[i] = desiredScale;
+        totalDesiredWidth += w * desiredScale;
+      });
+
+      const k = totalDesiredWidth === 0 ? 1 : totalNaturalWidth / totalDesiredWidth;
+      let currentLayoutX = 0;
+      chars.forEach((span, i) => {
+        const w = charWidths[i];
+        const finalScale = desiredScales[i] * k;
+        span.style.transform = `translate3d(${currentLayoutX.toFixed(2)}px, 0, 0) scaleX(${finalScale.toFixed(3)})`;
+        currentLayoutX += w * finalScale;
+      });
+    }
+    requestAnimationFrame(fluidLoop);
+  }
+
+  fluidLoop();
+
+  fluidBobContainer.addEventListener('mousemove', (e) => {
+    const rect = fluidBobContainer.getBoundingClientRect();
+    targetX = e.clientX - rect.left;
+    if (targetIntensity === 0) currentX = targetX;
+    targetIntensity = 1;
+  });
+
+  fluidBobContainer.addEventListener('mouseleave', () => {
+    targetIntensity = 0;
+  });
 }

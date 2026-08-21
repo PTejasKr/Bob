@@ -9,6 +9,7 @@ from sentence_transformers import SentenceTransformer
 import faiss
 from rank_bm25 import BM25Okapi
 import nltk
+from transformers import AutoTokenizer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,8 +17,10 @@ logger = logging.getLogger(__name__)
 # Try to download punkt for word tokenization, if needed
 try:
     nltk.data.find('tokenizers/punkt')
+    nltk.data.find('tokenizers/punkt_tab')
 except LookupError:
     nltk.download('punkt')
+    nltk.download('punkt_tab')
 
 # Configuration
 CORPUS_FILE = "../data/corpus.jsonl"
@@ -25,22 +28,37 @@ DB_PATH = "../data/metadata.sqlite"
 FAISS_PATH = "../data/faiss_index"
 BM25_PATH = "../data/bm25_index.pkl"
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-CHUNK_SIZE = 256
-CHUNK_OVERLAP = 32
+CHUNK_SIZE = 200
+CHUNK_OVERLAP = 1
 
-def simple_chunker(text: str, chunk_size: int, overlap: int) -> List[str]:
-    # A simple word-based chunker for speed. 
-    # In a real scenario, use tiktoken or sentence-based chunking.
-    words = text.split()
-    chunks = []
-    if not words:
-        return chunks
+def semantic_chunker(text: str, metadata: dict, tokenizer, max_tokens: int, overlap_sentences: int = 1) -> List[str]:
+    metadata_header = f"[Source: {metadata.get('source', 'unknown')} | Lang: {metadata.get('language', 'unknown')}]\n"
+    header_tokens = len(tokenizer.encode(metadata_header, add_special_tokens=False))
     
-    i = 0
-    while i < len(words):
-        chunk = " ".join(words[i:i+chunk_size])
-        chunks.append(chunk)
-        i += chunk_size - overlap
+    sentences = nltk.sent_tokenize(text)
+    chunks = []
+    
+    current_chunk_sentences = []
+    current_length = header_tokens
+    
+    for sentence in sentences:
+        sentence_tokens = len(tokenizer.encode(sentence, add_special_tokens=False))
+        
+        if current_length + sentence_tokens > max_tokens and current_chunk_sentences:
+            chunk_text = metadata_header + " ".join(current_chunk_sentences)
+            chunks.append(chunk_text)
+            
+            overlap_slice = current_chunk_sentences[-overlap_sentences:] if overlap_sentences > 0 else []
+            current_chunk_sentences = overlap_slice + [sentence]
+            current_length = header_tokens + sum(len(tokenizer.encode(s, add_special_tokens=False)) for s in current_chunk_sentences)
+        else:
+            current_chunk_sentences.append(sentence)
+            current_length += sentence_tokens
+            
+    if current_chunk_sentences:
+        chunk_text = metadata_header + " ".join(current_chunk_sentences)
+        chunks.append(chunk_text)
+        
     return chunks
 
 def setup_db(db_path: str):
@@ -64,11 +82,12 @@ def main():
 
     # 1. Load documents & Chunk
     logger.info("Loading and chunking documents...")
+    tokenizer = AutoTokenizer.from_pretrained(f"sentence-transformers/{EMBEDDING_MODEL}")
     chunks_data = []
     with open(CORPUS_FILE, 'r', encoding='utf-8') as f:
         for line in f:
             doc = json.loads(line)
-            doc_chunks = simple_chunker(doc["text"], CHUNK_SIZE, CHUNK_OVERLAP)
+            doc_chunks = semantic_chunker(doc["text"], doc.get("metadata", {}), tokenizer, CHUNK_SIZE, CHUNK_OVERLAP)
             for i, chunk_text in enumerate(doc_chunks):
                 chunks_data.append({
                     "chunk_id": f"{doc['id']}_c{i}",

@@ -53,6 +53,20 @@ async def process_voice_query(audio: UploadFile = File(...)):
             latency_ms=metrics
         )
 
+    # Fast Keyword Guardrail (Requirement 6)
+    BLOCKED_KEYWORDS = {"ignore all previous", "system prompt", "bypass", "jailbreak", "hack", "drop table"}
+    if any(keyword in transcript.lower() for keyword in BLOCKED_KEYWORDS):
+        logger.warning(f"[{request_id}] Blocked query due to guardrail violation")
+        return VoiceQueryResponse(
+            request_id=request_id,
+            transcript=transcript,
+            answer="I'm sorry, but I cannot fulfill this request as it violates safety guardrails.",
+            citations=[],
+            grounded=False,
+            confidence=0.0,
+            latency_ms=metrics
+        )
+
     t0 = time.perf_counter()
     store = get_store(settings)
     retrieved_context = await asyncio.to_thread(store.hybrid_search, transcript, 3)

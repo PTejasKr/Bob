@@ -11,9 +11,9 @@ export const FloatingPokeballBadge: React.FC<FloatingPokeballBadgeProps> = ({
 }) => {
   return (
     <div
-      className={`floating-pokeball-launcher ${isOpen ? 'active' : ''}`}
+      className={`floating-pokeball-launcher ${isOpen ? 'is-open' : 'is-closed'}`}
       onClick={onClick}
-      title={isOpen ? 'Minimize Pokédex' : 'Open Pokédex (or press Spacebar)'}
+      title={isOpen ? 'Close Pokédex' : 'Open Pokédex (or press Spacebar)'}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -24,7 +24,6 @@ export const FloatingPokeballBadge: React.FC<FloatingPokeballBadgeProps> = ({
       }}
     >
       <div className="scalloped-badge-wrap">
-        {/* Scalloped / Petaled dark badge SVG background matching Image 2 */}
         <svg
           viewBox="0 0 100 100"
           className="scalloped-badge-svg"
@@ -38,11 +37,9 @@ export const FloatingPokeballBadge: React.FC<FloatingPokeballBadgeProps> = ({
             </radialGradient>
             <filter id="badgeShadow" x="-20%" y="-20%" width="140%" height="140%">
               <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.8" />
-              <feDropShadow dx="0" dy="0" stdDeviation="8" floodColor="#e51922" floodOpacity="0.25" />
             </filter>
           </defs>
 
-          {/* 12-lobed smooth scalloped badge perimeter */}
           <path
             d="
               M 50 4
@@ -61,29 +58,29 @@ export const FloatingPokeballBadge: React.FC<FloatingPokeballBadgeProps> = ({
               Z
             "
             fill="url(#badgeDarkGrad)"
-            stroke="rgba(255, 255, 255, 0.12)"
+            stroke="rgba(255, 255, 255, 0.15)"
             strokeWidth="1.5"
             filter="url(#badgeShadow)"
           />
 
-          {/* Inner subtle groove */}
           <circle
             cx="50"
             cy="50"
             r="38"
             fill="none"
-            stroke="rgba(255, 255, 255, 0.06)"
+            stroke="rgba(255, 255, 255, 0.08)"
             strokeWidth="1"
           />
         </svg>
 
-        {/* Crisp Pokeball Icon (Image 2 style) */}
-        <div className="inner-pokeball-disc">
-          <div className="pokeball-top-half" />
-          <div className="pokeball-bottom-half" />
-          <div className="pokeball-center-band" />
-          <div className="pokeball-center-btn">
-            <div className="pokeball-inner-core" />
+        <div className="pokeball-3d-flipper">
+          <div className="inner-pokeball-disc">
+            <div className="pokeball-top-half" />
+            <div className="pokeball-bottom-half" />
+            <div className="pokeball-center-band" />
+            <div className="pokeball-center-btn">
+              <div className="pokeball-inner-core" />
+            </div>
           </div>
         </div>
       </div>

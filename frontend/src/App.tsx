@@ -38,15 +38,7 @@ function App() {
   const [ragStage, setRagStage] = useState<RagStage>('idle')
   const [latestMetrics, setLatestMetrics] = useState<LatencyMetrics | undefined>(undefined)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome-1',
-      sender: 'bob',
-      text: 'Hello, Trainer! I am Bob, your Voice RAG Pokédex. Click the Voice Orb or tap Spacebar to ask anything.',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      grounded: true,
-    },
-  ])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
 
   const recognitionRef = useRef<any>(null)
   const isListeningRef = useRef(false)
@@ -414,6 +406,19 @@ function App() {
 
   return (
     <div className="pokedex-app-root">
+      {/* Absolute Background Snorlax Video Wallpaper */}
+      <video
+        className="app-wallpaper-video"
+        autoPlay
+        loop
+        muted
+        playsInline
+      >
+        <source src="/background.mp4" type="video/mp4" />
+      </video>
+      <div className="app-wallpaper-overlay" />
+
+      {/* Floating Pokeball Badge */}
       <FloatingPokeballBadge
         isOpen={isOpen}
         onClick={() => setIsOpen((prev) => !prev)}

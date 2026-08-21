@@ -2,16 +2,13 @@ import json
 import hashlib
 import logging
 from groq import AsyncGroq
+from tenacity import retry, stop_after_attempt, wait_exponential
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You are {assistant_name}, a retrieval-augmented QA assistant.
-Rules: Use ONLY the RETRIEVED CONTEXT. Answer concisely (2-4 sentences). Every claim must be grounded in context. If insufficient, say so. Output JSON only, no markdown.
-
-OUTPUT SCHEMA:
-{{"answer":"string","citations":[{{"chunk_id":"string","support":"string"}}],"grounded":true,"confidence":0.0}}
-"""
+Rules: Use ONLY the RETRIEVED CONTEXT. Answer concisely (2-4 sentences). Every claim must be grounded in context. If insufficient, say so."""
 
 _client: AsyncGroq | None = None
 
@@ -55,6 +52,53 @@ def _cache_set(key: str, value: dict):
 
 _MAX_CHARS_PER_CHUNK = 420
 
+TOOLS = [{
+    "type": "function",
+    "function": {
+        "name": "provide_answer",
+        "description": "Provide a grounded answer using ONLY the retrieved context.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "answer": {"type": "string", "description": "Concisely answer the question (2-4 sentences) using ONLY the retrieved context. If insufficient, state that you don't know."},
+                "citations": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "chunk_id": {"type": "string"},
+                            "support": {"type": "string", "description": "The exact quote from the context supporting this citation"}
+                        },
+                        "required": ["chunk_id", "support"]
+                    }
+                },
+                "grounded": {"type": "boolean", "description": "True if the answer is completely supported by context."},
+                "confidence": {"type": "number", "description": "Confidence score from 0.0 to 1.0"}
+            },
+            "required": ["answer", "citations", "grounded", "confidence"]
+        }
+    }
+}]
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=4))
+async def _call_llm_with_retry(client, model_name, system_content, user_content):
+    completion = await client.chat.completions.create(
+        model=model_name,
+        messages=[
+            {"role": "system", "content": system_content},
+            {"role": "user", "content": user_content}
+        ],
+        tools=TOOLS,
+        tool_choice={"type": "function", "function": {"name": "provide_answer"}},
+        temperature=0.0,
+        max_tokens=256,
+    )
+    
+    message = completion.choices[0].message
+    if message.tool_calls:
+        return json.loads(message.tool_calls[0].function.arguments)
+    raise ValueError("LLM did not return a tool call")
+
 async def generate_answer(query: str, retrieved_context: list) -> dict:
     ck = _cache_key(query, retrieved_context)
     cached = _cache_get(ck)
@@ -75,18 +119,8 @@ async def generate_answer(query: str, retrieved_context: list) -> dict:
     try:
         client = _get_client()
         model_name = _resolve_model(settings.LLM_MODEL)
-        completion = await client.chat.completions.create(
-            model=model_name,
-            messages=[
-                {"role": "system", "content": system_content},
-                {"role": "user", "content": user_content}
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.0,
-            max_tokens=180,
-        )
-        response_text = completion.choices[0].message.content
-        result = json.loads(response_text)
+        result = await _call_llm_with_retry(client, model_name, system_content, user_content)
+        
         _cache_set(ck, result)
         return result
     except Exception as e:

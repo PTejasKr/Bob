@@ -12,10 +12,16 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-    <!-- App Root Container (Solid Pure Black) -->
+    <!-- App Root Container -->
     <div class="pokedex-app-root">
-        <!-- Floating Pokeball Launcher Badge (Image 2 style) -->
-        <div id="pokeball-launcher" class="floating-pokeball-launcher" title="Toggle Pokédex (or press Spacebar)">
+        <!-- Background Snorlax Video Wallpaper -->
+        <video class="app-wallpaper-video" autoplay loop muted playsinline>
+            <source src="background.mp4" type="video/mp4">
+        </video>
+        <div class="app-wallpaper-overlay"></div>
+
+        <!-- Floating Pokeball Launcher Badge -->
+        <div id="pokeball-launcher" class="floating-pokeball-launcher is-open" title="Toggle Pokédex (or press Spacebar)">
             <div class="scalloped-badge-wrap">
                 <svg viewBox="0 0 100 100" class="scalloped-badge-svg" xmlns="http://www.w3.org/2000/svg">
                     <defs>
@@ -43,12 +49,14 @@
                     " fill="url(#badgeDarkGrad)" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5" />
                     <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" />
                 </svg>
-                <div class="inner-pokeball-disc">
-                    <div class="pokeball-top-half"></div>
-                    <div class="pokeball-bottom-half"></div>
-                    <div class="pokeball-center-band"></div>
-                    <div class="pokeball-center-btn">
-                        <div class="pokeball-inner-core"></div>
+                <div class="pokeball-3d-flipper">
+                    <div class="inner-pokeball-disc">
+                        <div class="pokeball-top-half"></div>
+                        <div class="pokeball-bottom-half"></div>
+                        <div class="pokeball-center-band"></div>
+                        <div class="pokeball-center-btn">
+                            <div class="pokeball-inner-core"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -138,21 +146,16 @@
                                             </div>
                                         </div>
 
-                                        <!-- WhatsApp Chat Messages Viewport (Image 4 style) -->
+                                        <!-- Screen Viewport with Interactive Fluid BOB -->
                                         <div id="chat-viewport" class="chat-messages-viewport">
-                                            <!-- Welcome Message from Bob in Yellow Text -->
-                                            <div class="wa-message-row bob-row">
-                                                <div class="wa-bubble wa-bob-bubble">
-                                                    <div class="wa-bubble-tail tail-left"></div>
-                                                    <div class="wa-bubble-header">
-                                                        <span class="wa-sender-label">BOB [POKÉDEX]</span>
+                                            <div id="central-bob-stage" class="central-fluid-screen-stage">
+                                                <div id="fluid-bob-container" class="fluid-text-container central-fluid-bob-hero">
+                                                    <div class="fluid-text-animated opacity-100">
+                                                        <span class="fluid-text-char">B</span>
+                                                        <span class="fluid-text-char">O</span>
+                                                        <span class="fluid-text-char">B</span>
                                                     </div>
-                                                    <div class="wa-bubble-text yellow-rag-text">
-                                                        Hello, Trainer! I am Bob, your Voice RAG Pokédex. Press the Blue Button, click the White Orb, or tap Spacebar to ask anything.
-                                                    </div>
-                                                    <div class="wa-bubble-footer">
-                                                        <span class="wa-timestamp">Just now</span>
-                                                    </div>
+                                                    <span class="fluid-text-placeholder">BOB</span>
                                                 </div>
                                             </div>
                                         </div>
