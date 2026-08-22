@@ -96,8 +96,8 @@ function App() {
           setRagStage((s) => (s === 'retrieving' ? 'generating' : s))
         }, 120)
 
-        const base = (import.meta as any).env?.VITE_API_BASE || 'http://127.0.0.1:8000'
-        const targetUrl = base ? `${base}/api/v1/text/query` : '/api/v1/text/query'
+        const base = (import.meta as any).env?.VITE_API_BASE || ''
+        const targetUrl = `${base}/api/v1/text/query`
 
         const response = await fetch(targetUrl, {
           method: 'POST',
@@ -179,7 +179,7 @@ function App() {
       setLiveTranscript('Transcribing your recording...')
 
       try {
-        const base = (import.meta as any).env?.VITE_API_BASE || 'http://127.0.0.1:8000'
+        const base = (import.meta as any).env?.VITE_API_BASE || ''
         const formData = new FormData()
         formData.append('audio', audioBlob, 'recording.webm')
         const response = await fetch(`${base}/api/v1/voice/query`, {
