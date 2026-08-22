@@ -6,8 +6,9 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from app.schemas.responses import VoiceQueryResponse, LatencyMetrics, Citation
 from app.services.generator import generate_answer
-from app.repositories.vector_store import get_store
+from app.repositories.lancedb_store import get_store
 from app.core.config import settings
+from app.core.metrics import record_pipeline
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -34,9 +35,26 @@ async def process_text_query(req: TextQueryRequest):
             latency_ms=metrics,
         )
 
-    t0 = time.perf_counter()
     store = get_store(settings)
-    retrieved_context = await asyncio.to_thread(store.hybrid_search, query, req.top_k)
+    
+    # Fast Keyword Guardrail via semantic-router
+    matched_route = store.check_guardrails(query)
+    if matched_route is not None:
+        logger.warning(f"[{request_id}] Blocked query due to semantic guardrail: {matched_route}")
+        metrics.total = int((time.perf_counter() - t_start) * 1000)
+        record_pipeline(metrics, "text")
+        return VoiceQueryResponse(
+            request_id=request_id,
+            transcript=query,
+            answer="I'm sorry, but I cannot fulfill this request as it is out of scope or violates safety guardrails.",
+            citations=[],
+            grounded=False,
+            confidence=0.0,
+            latency_ms=metrics
+        )
+
+    t0 = time.perf_counter()
+    retrieved_context = await asyncio.to_thread(store.search, query, req.top_k)
     metrics.retrieval = int((time.perf_counter() - t0) * 1000)
 
     t0 = time.perf_counter()
@@ -53,6 +71,7 @@ async def process_text_query(req: TextQueryRequest):
     metrics.validation = int((time.perf_counter() - t0) * 1000)
 
     metrics.total = int((time.perf_counter() - t_start) * 1000)
+    record_pipeline(metrics, "text")
     logger.info(f"[{request_id}] text_pipeline total={metrics.total}ms retrieval={metrics.retrieval}ms generation={metrics.generation}ms")
 
     return VoiceQueryResponse(

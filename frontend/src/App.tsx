@@ -3,6 +3,7 @@ import { MoreHorizontal, X } from 'lucide-react'
 import { PokedexChassis } from './components/PokedexChassis'
 import { FloatingPokeballBadge } from './components/FloatingPokeballBadge'
 import { FluidText } from './components/FluidText'
+
 import type { ChatMessage } from './components/PokedexScreenChat'
 import type { RagStage } from './components/LinearRagLoader'
 import './App.css'
@@ -395,15 +396,40 @@ function App() {
 
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault()
-        toggleSpeechInput()
-      } else if (e.key === 'Escape' && isOpen) {
+        if (!e.repeat && !isListeningRef.current) {
+          startSpeechRecognition()
+        }
+      } else if (e.key === 'Escape') {
         setIsOpen(false)
       }
     }
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault()
+        if (isListeningRef.current) {
+          stopSpeechRecognition()
+        }
+      }
+    }
+
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [toggleSpeechInput, isOpen])
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [startSpeechRecognition, stopSpeechRecognition])
 
   return (
     <div className="pokedex-app-root">
@@ -421,16 +447,7 @@ function App() {
 
       {/* Central Fluid Text BOB over Snorlax in wallpaper */}
       {!isOpen && (
-        <div className="wallpaper-central-bob-stage">
-          <FluidText
-            text="BOB"
-            className="wallpaper-fluid-bob-hero"
-            maxScale={2.0}
-            radius={200}
-            stiffness={0.15}
-            fadeDuration={700}
-          />
-        </div>
+        <FluidText text="BOB" className="wallpaper-fluid-bob-hero" />
       )}
 
       {/* Floating Pokeball Badge */}
@@ -440,7 +457,7 @@ function App() {
       />
 
       {isOpen && (
-        <div className="pokedex-modal-stage">
+        <div className="pokedex-modal-stage" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
           <PokedexChassis
             messages={messages}
             liveTranscript={liveTranscript}
@@ -452,6 +469,27 @@ function App() {
             onSendMessage={handleQuery}
             onPlaySpeech={speakResponse}
           />
+          
+          {/* Absolute Backend Metrics (Small Cards) */}
+          {latestMetrics && (
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.5rem' }}>
+              <div style={{ background: 'rgba(0,0,0,0.6)', padding: '0.5rem 1rem', borderRadius: '8px', color: '#0f0', fontFamily: 'monospace', fontSize: '0.85rem', backdropFilter: 'blur(4px)', border: '1px solid rgba(0,255,0,0.2)' }}>
+                <strong>Total Latency:</strong> {latestMetrics.total}ms
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.6)', padding: '0.5rem 1rem', borderRadius: '8px', color: '#0f0', fontFamily: 'monospace', fontSize: '0.85rem', backdropFilter: 'blur(4px)', border: '1px solid rgba(0,255,0,0.2)' }}>
+                <strong>STT:</strong> {latestMetrics.stt}ms
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.6)', padding: '0.5rem 1rem', borderRadius: '8px', color: '#0f0', fontFamily: 'monospace', fontSize: '0.85rem', backdropFilter: 'blur(4px)', border: '1px solid rgba(0,255,0,0.2)' }}>
+                <strong>Routing:</strong> {latestMetrics.rerank}ms
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.6)', padding: '0.5rem 1rem', borderRadius: '8px', color: '#0f0', fontFamily: 'monospace', fontSize: '0.85rem', backdropFilter: 'blur(4px)', border: '1px solid rgba(0,255,0,0.2)' }}>
+                <strong>Vector DB:</strong> {latestMetrics.retrieval}ms
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.6)', padding: '0.5rem 1rem', borderRadius: '8px', color: '#0f0', fontFamily: 'monospace', fontSize: '0.85rem', backdropFilter: 'blur(4px)', border: '1px solid rgba(0,255,0,0.2)' }}>
+                <strong>Generation:</strong> {latestMetrics.generation}ms
+              </div>
+            </div>
+          )}
         </div>
       )}
 

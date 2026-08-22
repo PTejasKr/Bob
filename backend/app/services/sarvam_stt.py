@@ -19,11 +19,6 @@ async def transcribe_audio(audio_data: bytes, filename: str = "audio.wav", conte
     if not audio_data:
         raise ValueError("Audio upload is empty")
 
-    url = "https://api.sarvam.ai/speech-to-text"
-    headers = {
-        "api-subscription-key": settings.SARVAM_API_KEY
-    }
-    
     mime = content_type if content_type and content_type.startswith("audio/") else "audio/wav"
     if ";" in mime:
         mime = mime.split(";", 1)[0]
@@ -37,27 +32,18 @@ async def transcribe_audio(audio_data: bytes, filename: str = "audio.wav", conte
     elif (not content_type or not content_type.startswith("audio/")) and lower.endswith(".ogg"):
         mime = "audio/ogg"
 
-    files = {
-        "file": (filename, audio_data, mime)
-    }
-    data = {
-        "model": "saaras:v3",
-        "mode": "transcribe",
-    }
     client = _get_client()
     try:
-        response = await client.post(url, headers=headers, files=files, data=data)
-        response.raise_for_status()
-        result = response.json()
-        transcript = result.get("transcript")
-        if not isinstance(transcript, str):
-            raise ValueError("Sarvam returned an invalid transcript")
-        return transcript.strip()
-    except httpx.HTTPStatusError as e:
-        logger.error(f"Sarvam API Error {e.response.status_code}: {e.response.text[:500]}")
-        raise Exception(f"STT failed: {e.response.status_code}")
-    except ValueError:
-        raise
+        # Reverting back to Sarvam AI as requested by user
+        sarvam_url = "https://api.sarvam.ai/speech-to-text-translate"
+        sarvam_headers = {"api-subscription-key": settings.SARVAM_API_KEY}
+        sarvam_files = {"file": (filename, audio_data, mime)}
+        
+        sarvam_resp = await client.post(sarvam_url, headers=sarvam_headers, files=sarvam_files)
+        sarvam_resp.raise_for_status()
+        
+        resp_data = sarvam_resp.json()
+        return resp_data.get("transcript", resp_data.get("text", "")).strip()
     except Exception as e:
-        logger.error(f"STT Error: {type(e).__name__}: {str(e)[:400]}")
-        raise Exception("STT request failed")
+        logger.error(f"Sarvam STT Error: {e}")
+        raise Exception(f"STT request failed: {e}")

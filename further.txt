@@ -1,0 +1,70 @@
+# hhgoa-rag — FURTHER STEPS (further.txt)
+Generated 22-08-2026 after backend repair with antigravity changes reconciled.
+
+## ✅ DONE (do NOT redo)
+1. Backend runs on http://127.0.0.1:8000 (uvicorn, PID visible via `netstat -ano | findstr :8000`).
+   Start: cd backend; ..\venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+   Ready takes ~30s (model load). Wait for /ready before testing.
+2. STT FIXED: tests/unit/test_audio.wav was 1s of pure SILENCE (RMS=0) — that was the "broken" STT.
+   Real speech verified: tests/unit/real_speech.wav ("What is a corporation?") → transcript OK, stt≈350ms.
+3. LanceDB ingested: ingestion/build_lancedb.py → data/lancedb table "chunks" = 1001 rows.
+   Re-run ONLY if corpus.jsonl changes: venv python ingestion/build_lancedb.py
+4. Guardrails (semantic-router pattern) live in TWO places — pick ONE to keep:
+   - app/repositories/lancedb_store.py::check_guardrails (used by routes_text.py)
+   - app/services/guardrails.py::classify_query (used by routes_voice.py; includes jailbreak/smalltalk)
+5. Metrics endpoint LIVE: GET /api/v1/metrics → p50/p70/p100/mean per stage + counters.
+   Verified sample: stt p50=352ms, retrieval p50=15.5ms, total p100=1520ms (cold), hot total=377ms.
+6. Metric cards added to frontend_vanilla/app.js (bottom-right panel, polls every 3s).
+7. generator.py model remap fixed: groq/compound-mini is the ONLY reliable chat model for this key
+   (llama3-8b-8192 + llama-3.1-8b-instant are DECOMMISSIONED → 404). If generation errors reappear,
+   check nobody reverted _resolve_model in backend/app/services/generator.py.
+8. Voice verified end-to-end twice:
+   {"transcript":"What is a corporation?", stt=349, retrieval=8, total=377(hot)/1520(cold), grounded=true}
+
+## 🔧 LEFT TO DO (in priority order)
+
+### A. Mic auto-stop 2s after silence + "hey bob" wake word (NOT DONE)
+File: frontend_vanilla/app.js (PokeDex UI) and/or frontend/src/App.tsx (React).
+1. After getUserMedia({audio:true}), add:
+   const ctx = new AudioContext(); const src = ctx.createMediaStreamSource(stream);
+   const an = ctx.createAnalyser(); an.fftSize = 512; src.connect(an);
+2. rAF loop: getByteTimeDomainData → RMS. If rms < 0.01 for >2000ms → stopRecording().
+   Reset the 2000ms timer whenever rms >= 0.02.
+3. Wake word "hey bob": use webkitSpeechRecognition continuous=true, interimResults=true;
+   onresult: if transcript.toLowerCase().includes('hey bob') → start main capture + recognition.stop().
+   Needs a one-time user gesture (the blue-start-btn already provides it).
+4. Status text: 'Say "hey bob"…' when idle; 'Listening… (auto-stops 2s after you stop)' while recording.
+
+### B. React frontend parity (optional)
+frontend/src/App.tsx still posts to VITE_API_BASE||http://127.0.0.1:8000/api/v1/voice/query — works.
+Add same metrics card panel: fetch('/api/v1/metrics') every 3s into small cards under results.
+
+### C. Chonkie parent-child chunking (trick #4, NOT DONE)
+pip install chonkie
+Then rewrite ingestion/build_lancedb.py: parents=512 tokens, children=64 tokens split on Indic '।'
+Store children vectors in LanceDB but keep parent_text pointing at the 512-token parent
+(lancedb_store.search() already returns parent_text — just fix what goes into those columns).
+
+### D. Pipecat streaming voice (trick #1, NOT DONE — big job)
+pip install pipecat-ai pipecat-ai[sarvam]  (check extras names)
+Replace POST /api/v1/voice/query with a WebSocket endpoint streaming partial transcripts;
+keep REST as fallback. Only needed if judges require true barge-in/streaming.
+
+### E. Instructor structured outputs (partially lost)
+Antigravity installed instructor==1.15.4 then reverted to plain completions for speed.
+If citations/grounded JSON needed again: instructor.from_groq(client, mode=instructor.Mode.JSON)
+(NOT Mode.TOOLS — compound models only support json_mode).
+
+### F. Ops hygiene
+- .env contains live keys and IS committed → git rm --cached .env; rotate both keys.
+- Kill orphan processes between runs: Get-Process python | ? {$_.Path -like '*hhgoa-rag*'} | Stop-Process -Force
+- Antigravity session may overwrite files while you edit — close it or re-check diffs after.
+
+## 📊 CURRENT LATENCY SNAPSHOT (from live /api/v1/metrics)
+stt        p50 352ms (external Sarvam — floor)
+guardrail  ~55ms first call, <5ms warm
+retrieval  p50 15.5ms (LanceDB in-process)
+generation p50 1051ms cold, 0ms cached (groq/compound-mini network-bound)
+total      hot path ≈ 11–30ms cached; realistic uncached voice ≈ 1.4–1.6s (STT+LLM dominate)
+Sub-200ms holds ONLY on cache hits; to approach it always: pre-warm Groq with a tiny request
+at startup and consider max_tokens=64 + shorter system prompt.

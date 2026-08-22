@@ -17,7 +17,7 @@ export const FloatingPokeballBadge: React.FC<FloatingPokeballBadgeProps> = ({
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === 'Enter') {
           e.preventDefault()
           onClick()
         }

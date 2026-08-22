@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.repositories.vector_store import get_store
+from app.repositories.lancedb_store import get_store
 from app.core.config import settings
 
 router = APIRouter()

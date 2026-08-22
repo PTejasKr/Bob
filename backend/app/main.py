@@ -2,9 +2,9 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import routes_voice, routes_health, routes_text
+from app.api import routes_voice, routes_health, routes_text, routes_metrics
 from app.core.config import settings
-from app.repositories.vector_store import get_store
+from app.repositories.lancedb_store import get_store
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -38,6 +38,7 @@ app.add_middleware(
 )
 
 app.include_router(routes_health.router, tags=["health"])
+app.include_router(routes_metrics.router, prefix="/api/v1", tags=["metrics"])
 app.include_router(routes_text.router, prefix="/api/v1/text", tags=["text"])
 app.include_router(routes_voice.router, prefix="/api/v1/voice", tags=["voice"])
 
