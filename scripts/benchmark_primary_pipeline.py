@@ -21,7 +21,7 @@ print("PRIMARY PIPELINE BENCHMARK — hhgoa-rag")
 print("="*70)
 
 from app.core.config import settings
-from app.repositories.vector_store import get_store
+from app.repositories.lancedb_store import get_store
 
 print(f"\n[config] VECTOR={settings.VECTOR_INDEX_PATH}")
 print(f"[config] BM25={settings.BM25_INDEX_PATH}")
@@ -42,15 +42,15 @@ queries = [
 
 print("\n--- Retrieval-only micro-bench (warm) ---")
 # warmup — first encode is ~140ms cold, then ~23ms
-store.hybrid_search(queries[0], top_k=3)
+asyncio.run(store.retrieve(queries[0], top_k=3)
 for q in queries:
     t0=time.perf_counter()
-    res = store.hybrid_search(q, top_k=3)
+    res = asyncio.run(store.retrieve(q, top_k=3)
     ms=(time.perf_counter()-t0)*1000
     print(f"  hybrid_search({q!r:40s}) {ms:6.1f}ms  -> {len(res)} chunks")
     # second hit should be cached (embedding cache)
     t0=time.perf_counter()
-    res2 = store.hybrid_search(q, top_k=3)
+    res2 = asyncio.run(store.retrieve(q, top_k=3)
     ms2=(time.perf_counter()-t0)*1000
     print(f"    (cached embedding)               {ms2:6.1f}ms")
 

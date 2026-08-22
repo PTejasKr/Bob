@@ -38,7 +38,10 @@ async def process_text_query(req: TextQueryRequest):
     store = get_store(settings)
     
     # Fast Keyword Guardrail via semantic-router
-    matched_route = store.check_guardrails(query)
+    t0_g = time.perf_counter()
+    matched_route = await asyncio.to_thread(store.check_guardrails, query)
+    metrics.rerank = int((time.perf_counter() - t0_g) * 1000)
+
     if matched_route is not None:
         logger.warning(f"[{request_id}] Blocked query due to semantic guardrail: {matched_route}")
         metrics.total = int((time.perf_counter() - t_start) * 1000)
@@ -54,7 +57,7 @@ async def process_text_query(req: TextQueryRequest):
         )
 
     t0 = time.perf_counter()
-    retrieved_context = await asyncio.to_thread(store.search, query, req.top_k)
+    retrieved_context = await store.retrieve(query, top_k=req.top_k)
     metrics.retrieval = int((time.perf_counter() - t0) * 1000)
 
     t0 = time.perf_counter()
@@ -63,12 +66,12 @@ async def process_text_query(req: TextQueryRequest):
 
     t0 = time.perf_counter()
     valid_citations = []
-    if "citations" in gen_result:
-        valid_ids = {c["chunk_id"] for c in retrieved_context}
-        for cit in gen_result["citations"]:
-            if cit.get("chunk_id") in valid_ids:
-                valid_citations.append(Citation(**cit))
+    valid_ids = {c["chunk_id"] for c in retrieved_context}
+    for cit in gen_result.get("citations", []):
+        if cit.get("chunk_id") in valid_ids:
+            valid_citations.append(Citation(**cit))
     metrics.validation = int((time.perf_counter() - t0) * 1000)
+
 
     metrics.total = int((time.perf_counter() - t_start) * 1000)
     record_pipeline(metrics, "text")

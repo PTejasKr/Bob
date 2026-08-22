@@ -1,0 +1,17 @@
+{
+  "built_at": "2026-08-22T23:05:43",
+  "corpus_file": "data/corpus.jsonl",
+  "corpus_sha16": "a7c0fcbedf6d94a2",
+  "docs": 801,
+  "child_chunks": 904,
+  "embed_model": "all-MiniLM-L6-v2",
+  "vector_dim": 384,
+  "parent_words": 512,
+  "child_words": 64,
+  "child_stride": 48,
+  "vector_index": "IVF_HNSW_SQ(cosine)",
+  "fts_index": "bm25(FTS)",
+  "versions": {
+    "python": "3.12.13"
+  }
+}

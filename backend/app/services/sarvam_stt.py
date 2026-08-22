@@ -15,35 +15,41 @@ def _get_client() -> httpx.AsyncClient:
         )
     return _client
 
-async def transcribe_audio(audio_data: bytes, filename: str = "audio.wav", content_type: str | None = None) -> str:
+async def transcribe_audio(audio_data: bytes, filename: str = "audio.webm", content_type: str | None = None) -> str:
     if not audio_data:
         raise ValueError("Audio upload is empty")
 
-    mime = content_type if content_type and content_type.startswith("audio/") else "audio/wav"
+    mime = content_type if content_type and content_type.startswith("audio/") else "audio/webm"
     if ";" in mime:
         mime = mime.split(";", 1)[0]
-    lower = filename.lower()
-    if (not content_type or not content_type.startswith("audio/")) and lower.endswith(".webm"):
-        mime = "audio/webm"
-    elif (not content_type or not content_type.startswith("audio/")) and lower.endswith(".mp3"):
-        mime = "audio/mpeg"
-    elif (not content_type or not content_type.startswith("audio/")) and (lower.endswith(".m4a") or lower.endswith(".mp4")):
-        mime = "audio/m4a"
-    elif (not content_type or not content_type.startswith("audio/")) and lower.endswith(".ogg"):
-        mime = "audio/ogg"
-
+    
     client = _get_client()
+    
+    # Try Sarvam STT first
     try:
-        # Reverting back to Sarvam AI as requested by user
         sarvam_url = "https://api.sarvam.ai/speech-to-text-translate"
         sarvam_headers = {"api-subscription-key": settings.SARVAM_API_KEY}
         sarvam_files = {"file": (filename, audio_data, mime)}
         
         sarvam_resp = await client.post(sarvam_url, headers=sarvam_headers, files=sarvam_files)
-        sarvam_resp.raise_for_status()
-        
-        resp_data = sarvam_resp.json()
-        return resp_data.get("transcript", resp_data.get("text", "")).strip()
+        if sarvam_resp.status_code == 200:
+            resp_data = sarvam_resp.json()
+            return resp_data.get("transcript", resp_data.get("text", "")).strip()
     except Exception as e:
-        logger.error(f"Sarvam STT Error: {e}")
-        raise Exception(f"STT request failed: {e}")
+        logger.warning(f"Sarvam STT attempt failed: {e}")
+
+    # Fallback to Groq Whisper API (whisper-large-v3-turbo)
+    if settings.LLM_API_KEY:
+        try:
+            groq_resp = await client.post(
+                "https://api.groq.com/openai/v1/audio/transcriptions",
+                headers={"Authorization": f"Bearer {settings.LLM_API_KEY}"},
+                files={"file": (filename, audio_data, mime)},
+                data={"model": "whisper-large-v3-turbo"}
+            )
+            if groq_resp.status_code == 200:
+                return groq_resp.json().get("text", "").strip()
+        except Exception as ge:
+            logger.warning(f"Groq Whisper fallback failed: {ge}")
+
+    raise Exception("STT request failed across primary and fallback services.")

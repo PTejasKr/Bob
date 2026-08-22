@@ -13,21 +13,21 @@ Rules: Use ONLY the RETRIEVED CONTEXT. Answer as concisely as possible (1-2 sent
 _client: AsyncGroq | None = None
 
 def _resolve_model(name: str) -> str:
-    # Only models verified available for this API key (Groq /v1/models):
-    # groq/compound-mini, groq/compound, openai/gpt-oss-20b, qwen/qwen3.6-27b.
-    # llama3-8b-8192 and llama-3.1-8b-instant are DECOMMISSIONED (404).
     remap = {
-        "llama3-8b-8192": "groq/compound-mini",
-        "llama-3.1-8b-instant": "groq/compound-mini",
+        "llama3-8b-8192": "openai/gpt-oss-20b",
+        "llama-3.1-8b-instant": "openai/gpt-oss-20b",
         "groq/compound-mini": "groq/compound-mini",
         "groq/compound": "groq/compound",
+        "qwen/qwen3.6-27b": "qwen/qwen3.6-27b",
+        "openai/gpt-oss-20b": "openai/gpt-oss-20b",
     }
-    return remap.get(name, name)
+    return remap.get(name, "groq/compound-mini")
+
 
 def _get_client() -> AsyncGroq:
     global _client
     if _client is None:
-        _client = AsyncGroq(api_key=settings.LLM_API_KEY)
+        _client = AsyncGroq(api_key=settings.LLM_API_KEY or "dummy_key")
     return _client
 
 _CACHE: dict[str, dict] = {}
@@ -55,6 +55,17 @@ async def generate_answer(query: str, retrieved_context: list) -> dict:
             txt = txt[:_MAX_CHARS_PER_CHUNK] + "..."
         context_parts.append(f"[{ctx.get('chunk_id','')}] {txt}")
     context_str = "\n".join(context_parts)
+
+    if not settings.LLM_API_KEY:
+        # Fallback snippet if API key is not configured
+        snippet = context_parts[0] if context_parts else "No relevant context found."
+        return {
+            "answer": f"Based on retrieved context: {snippet}",
+            "citations": [],
+            "grounded": len(context_parts) > 0,
+            "confidence": 0.5
+        }
+
 
     system_content = SYSTEM_PROMPT.format(assistant_name=settings.ASSISTANT_NAME)
     user_content = f"Q: {query}\nCTX:\n{context_str}"

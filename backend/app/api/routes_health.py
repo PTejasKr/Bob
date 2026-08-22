@@ -11,9 +11,10 @@ def health_check():
 @router.get("/ready")
 def readiness_check():
     store = get_store(settings)
-    if store.index is None or store.bm25 is None:
-        return {"status": "not_ready", "detail": "Indexes not loaded"}
+    if store.store.table is None:
+        return {"status": "not_ready", "detail": "LanceDB table not loaded"}
     # Verify Bob identity + keys present (don't leak values)
     if not settings.SARVAM_API_KEY or not settings.LLM_API_KEY:
         return {"status": "not_ready", "detail": "API keys missing"}
     return {"status": "ready", "assistant": settings.ASSISTANT_NAME, "indexes": "loaded"}
+

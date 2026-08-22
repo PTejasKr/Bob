@@ -4,20 +4,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import routes_voice, routes_health, routes_text, routes_metrics
 from app.core.config import settings
-from app.repositories.lancedb_store import get_store
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Initializing application resources...")
-    # Pre-load vector store + warm embedding (first encode is 6x slower)
-    get_store(settings)
-    logger.info("Primary pipeline ready - retrieval warm, target <200ms hot path")
+    logger.info("Instant application startup initialized.")
     yield
     logger.info("Shutting down application...")
-    # Close persistent STT client
     try:
         from app.services.sarvam_stt import _client
         if _client is not None and not _client.is_closed:
@@ -25,9 +20,9 @@ async def lifespan(app: FastAPI):
     except Exception:
         pass
 
-app = FastAPI(title="Bob - HH Goa 2026 Voice RAG (Primary pipeline <200ms hot)", lifespan=lifespan, version="2.0.0")
+app = FastAPI(title="Bob - HH Goa 2026 Voice RAG", lifespan=lifespan, version="2.0.0")
 
-# CORS: allow all origins in dev; credentials must be False with wildcard
+# CORS setup
 cors_origins = ["*"] if settings.CORS_ORIGINS == "*" else [o.strip() for o in settings.CORS_ORIGINS.split(",")]
 app.add_middleware(
     CORSMiddleware,

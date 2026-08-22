@@ -1,5 +1,4 @@
-import React, { useEffect, useRef } from 'react'
-import { CheckCheck, Volume2, ShieldCheck, Zap, Sparkles, Send } from 'lucide-react'
+import React, { useRef, useEffect } from 'react'
 
 export interface ChatMessage {
   id: string
@@ -14,12 +13,12 @@ export interface ChatMessage {
     generation?: number
     total?: number
   }
-  citations?: Array<{ chunk_id: string; support: string }>
-  isInterim?: boolean
+  citations?: Array<{ title?: string; doc_id?: string; text?: string }>
 }
 
 interface PokedexScreenChatProps {
   messages: ChatMessage[]
+  activeHistoryIndex?: number | null
   liveTranscript: string
   isListening: boolean
   isProcessing: boolean
@@ -29,6 +28,7 @@ interface PokedexScreenChatProps {
 
 export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
   messages,
+  activeHistoryIndex,
   liveTranscript,
   isListening,
   isProcessing,
@@ -42,7 +42,7 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [messages, liveTranscript, isProcessing])
+  }, [messages, liveTranscript, isProcessing, activeHistoryIndex])
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,14 +54,32 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
     }
   }
 
+  // Filter pairs if activeHistoryIndex is set
+  let displayedMessages = messages
+  if (typeof activeHistoryIndex === 'number' && activeHistoryIndex >= 0) {
+    const pairs: { user?: ChatMessage; bob?: ChatMessage }[] = []
+    for (let i = 0; i < messages.length; i++) {
+      if (messages[i].sender === 'user') {
+        pairs.push({
+          user: messages[i],
+          bob: messages[i + 1]?.sender === 'bob' ? messages[i + 1] : undefined,
+        })
+      }
+    }
+    const pair = pairs[activeHistoryIndex]
+    if (pair) {
+      displayedMessages = [pair.user, pair.bob].filter(Boolean) as ChatMessage[]
+    }
+  }
+
   return (
     <div className="pokedex-screen-chat-container">
       <div className="chat-messages-viewport" ref={scrollRef}>
-        {messages.length === 0 && !liveTranscript && !isProcessing && (
+        {displayedMessages.length === 0 && !liveTranscript && !isProcessing && (
           <div className="chat-idle-placeholder" />
         )}
 
-        {messages.map((msg) => {
+        {displayedMessages.map((msg) => {
           const isUser = msg.sender === 'user'
           return (
             <div
@@ -69,19 +87,18 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
               className={`wa-message-row ${isUser ? 'user-row' : 'bob-row'}`}
             >
               <div className={`wa-bubble ${isUser ? 'wa-user-bubble' : 'wa-bob-bubble'}`}>
-                <div className={`wa-bubble-tail ${isUser ? 'tail-right' : 'tail-left'}`} />
-
                 <div className="wa-bubble-header">
                   <span className="wa-sender-label">
                     {isUser ? 'TRAINER' : 'BOB'}
                   </span>
                   {!isUser && onPlaySpeech && (
                     <button
+                      type="button"
                       className="wa-speak-btn"
                       onClick={() => onPlaySpeech(msg.text)}
-                      title="Speak Answer"
+                      title="Listen to response"
                     >
-                      <Volume2 size={13} />
+                      🔊
                     </button>
                   )}
                 </div>
@@ -90,74 +107,47 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
                   {msg.text}
                 </div>
 
-                {!isUser && msg.latency && (
+                {!isUser && (msg.grounded !== undefined || msg.latency) && (
                   <div className="wa-telemetry-badge">
                     {msg.grounded !== undefined && (
                       <span className={`ground-tag ${msg.grounded ? 'valid' : 'warn'}`}>
-                        <ShieldCheck size={11} />
-                        {msg.grounded ? 'Grounded' : 'Low Context'}
+                        🛡️{msg.grounded ? 'Grounded' : 'Unverified'}
                       </span>
                     )}
-                    {msg.latency.total !== undefined && (
-                      <span className="latency-tag">
-                        <Zap size={11} />
-                        {msg.latency.total}ms
-                      </span>
+                    {msg.latency?.total && (
+                      <span className="latency-tag">⚡{msg.latency.total}ms</span>
                     )}
                   </div>
                 )}
 
                 {!isUser && msg.citations && msg.citations.length > 0 && (
                   <div className="wa-citations-list">
-                    {msg.citations.map((c, idx) => (
-                      <div key={idx} className="citation-chip">
-                        <Sparkles size={10} />
-                        <span>Source {idx + 1}: {c.chunk_id.slice(0, 16)}</span>
-                      </div>
+                    {msg.citations.map((c, i) => (
+                      <span key={i} className="citation-chip">
+                        📄 {c.title || c.doc_id || `Doc #${i + 1}`}
+                      </span>
                     ))}
                   </div>
                 )}
 
                 <div className="wa-bubble-footer">
                   <span className="wa-timestamp">{msg.timestamp}</span>
-                  {isUser && <CheckCheck size={14} className="wa-blue-ticks" />}
+                  {isUser && <span className="wa-blue-ticks">✓✓</span>}
                 </div>
               </div>
             </div>
           )
         })}
 
-        {(isListening || (isProcessing && liveTranscript)) && (
+        {isListening && (
           <div className="wa-message-row user-row">
-            <div className="wa-bubble wa-user-bubble interim-live-bubble">
-              <div className="wa-bubble-tail tail-right" />
+            <div className="wa-bubble wa-user-bubble recording-pulse">
               <div className="wa-bubble-header">
-                <span className="wa-sender-label">
-                  {isListening ? 'TRAINER (RECORDING...)' : 'TRAINER'}
-                </span>
-                {isListening && <span className="live-mic-pulse">● REC</span>}
+                <span className="wa-sender-label">TRAINER (RECORDING...) • REC</span>
               </div>
-              <div className="wa-bubble-text live-speech-text">
-                {liveTranscript || 'Listening to your voice...'}
-              </div>
+              <div className="wa-bubble-text">{liveTranscript || 'Listening to your voice...'}</div>
               <div className="wa-bubble-footer">
                 <span className="wa-timestamp">Live</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {isProcessing && !liveTranscript && (
-          <div className="wa-message-row bob-row">
-            <div className="wa-bubble wa-bob-bubble processing-bubble">
-              <div className="wa-bubble-tail tail-left" />
-              <div className="wa-bubble-header">
-                <span className="wa-sender-label">BOB</span>
-              </div>
-              <div className="wa-bubble-text yellow-rag-text processing-dots">
-                <span className="rag-dot dot1">.</span>
-                <span className="rag-dot dot2">.</span>
-                <span className="rag-dot dot3">.</span>
               </div>
             </div>
           </div>
@@ -168,17 +158,11 @@ export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
         <input
           ref={inputRef}
           type="text"
-          placeholder="Ask Bob or press Spacebar..."
           className="pokedex-text-input"
-          disabled={isListening || isProcessing}
+          placeholder="Ask Bob or press Spacebar.."
         />
-        <button
-          type="submit"
-          className="pokedex-send-btn"
-          disabled={isListening || isProcessing}
-          title="Send query"
-        >
-          <Send size={15} />
+        <button type="submit" className="pokedex-send-btn" title="Send Query">
+          ➔
         </button>
       </form>
     </div>

@@ -1,24 +1,21 @@
-from typing import List, Dict
 import time
 import numpy as np
 import logging
+from typing import List, Dict
 from .embedder import ONNXEmbedder
 from .store import LanceDBStore
 
 logger = logging.getLogger(__name__)
 
 class RetrievalEngine:
-    """
-    Sub-50ms multilingual retrieval engine wrapping LanceDB and pySBD chunking.
-    """
-    def __init__(self, db_path: str = "./data/lancedb_optimized"):
-        # For backward compatibility with /ready route
-        self.index = True
-        self.bm25 = True
-        
+    def __init__(self, db_path: str = "./data/lancedb"):
         self.embedder = ONNXEmbedder()
         self.store = LanceDBStore(db_path)
         
+        # Fast path vs Full path deterministic classifier rules
+        self.complex_words = {"compare", "differences", "explain", "why", "how"}
+        
+        # Guardrail vectors
         self.routes = {
             "politics": [
                 "isn't politics the best thing ever",
@@ -42,17 +39,12 @@ class RetrievalEngine:
             emb = self.embedder.embed(utterances)
             self.route_embeddings[route_name] = emb
 
-    def retrieve(self, query_text: str, lang: str = "en", top_k: int = 3) -> List[Dict]:
-        query_vector = self.embedder.embed([query_text])[0]
-        results = self.store.search(query_vector.tolist(), lang=lang, top_k=top_k)
-        return results
-
-    def search(self, query: str, top_k: int = 3) -> List[Dict]:
-        # Alias for backward compatibility
-        return self.retrieve(query, lang="hi", top_k=top_k)
-        
-    def hybrid_search(self, query: str, top_k: int = 3) -> List[Dict]:
-        return self.search(query, top_k=top_k)
+    def classify_query(self, query: str) -> str:
+        tokens = query.lower().split()
+        # Fast path deterministic logic
+        if len(tokens) < 5 and not any(w in self.complex_words for w in tokens):
+            return "FAST"
+        return "FULL"
 
     def check_guardrails(self, query: str, threshold: float = 0.82) -> str:
         t0 = time.perf_counter()
@@ -69,6 +61,16 @@ class RetrievalEngine:
                 if highest_score >= threshold:
                     best_match = route_name
                     
-        logger.info(f"Guardrail check took {(time.perf_counter()-t0)*1000:.1f}ms. Route: {best_match} (Score: {highest_score:.2f})")
+        logger.info(f"Guardrail check took {(time.perf_counter()-t0)*1000:.1f}ms. Route: {best_match}")
         return best_match
 
+    async def retrieve(self, query_text: str, top_k: int = 5) -> List[Dict]:
+        query_type = self.classify_query(query_text)
+        query_vector = self.embedder.embed([query_text])[0].tolist()
+        
+        if query_type == "FAST":
+            logger.info("Routing query to FAST path (Dense only)")
+            return await self.store.fast_search(query_vector, top_k=3)
+        else:
+            logger.info("Routing query to FULL path (Hybrid + RRF)")
+            return await self.store.hybrid_search(query_text, query_vector, top_k=top_k)
