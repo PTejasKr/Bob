@@ -38,6 +38,7 @@ interface PokedexScreenChatProps {
 export const PokedexScreenChat: React.FC<PokedexScreenChatProps> = ({
   messages,
   liveTranscript,
+  bobLiveAnswer,
   isListening,
   isProcessing,
   activeTab = 0,
