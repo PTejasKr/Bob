@@ -15,52 +15,55 @@ export const DPadControl: React.FC<DPadControlProps> = ({
   onRight,
   onCenter,
 }) => {
+  const handleClick = (e: React.MouseEvent, fn?: () => void) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (fn) fn()
+  }
+
   return (
     <div className="dpad-housing">
       <div className="dpad-cross-container">
         <button
           type="button"
+          tabIndex={-1}
           className="dpad-btn dpad-up"
-          onClick={onUp}
+          onClick={(e) => handleClick(e, onUp)}
           title="Scroll Up"
           aria-label="D-Pad Up"
-        >
-          ▲
-        </button>
+        />
         <button
           type="button"
+          tabIndex={-1}
           className="dpad-btn dpad-left"
-          onClick={onLeft}
+          onClick={(e) => handleClick(e, onLeft)}
           title="Action Left"
           aria-label="D-Pad Left"
-        >
-          ◄
-        </button>
+        />
         <button
           type="button"
+          tabIndex={-1}
           className="dpad-btn dpad-center"
-          onClick={onCenter}
+          onClick={(e) => handleClick(e, onCenter)}
           title="Activate Bob"
           aria-label="D-Pad Center"
         />
         <button
           type="button"
+          tabIndex={-1}
           className="dpad-btn dpad-right"
-          onClick={onRight}
+          onClick={(e) => handleClick(e, onRight)}
           title="Action Right"
           aria-label="D-Pad Right"
-        >
-          ►
-        </button>
+        />
         <button
           type="button"
+          tabIndex={-1}
           className="dpad-btn dpad-down"
-          onClick={onDown}
+          onClick={(e) => handleClick(e, onDown)}
           title="Scroll Down"
           aria-label="D-Pad Down"
-        >
-          ▼
-        </button>
+        />
       </div>
     </div>
   )

@@ -37,13 +37,13 @@ def snapshot() -> dict:
         out = {"uptime_s": int(time.time() - _start), **_counters, "stages": {}}
         for stage, dq in _samples.items():
             if not dq:
-                out["stages"][stage] = {"n": 0, "p50": None, "p70": None, "p100": None, "mean": None}
+                out["stages"][stage] = {"n": 0, "p10": 0, "p50": 0, "p100": 0, "mean": 0}
                 continue
             arr = np.fromiter(dq, dtype=float)
             out["stages"][stage] = {
                 "n": int(arr.size),
+                "p10": round(float(np.percentile(arr, 10)), 1),
                 "p50": round(float(np.percentile(arr, 50)), 1),
-                "p70": round(float(np.percentile(arr, 70)), 1),
                 "p100": round(float(arr.max()), 1),
                 "mean": round(float(arr.mean()), 1),
             }

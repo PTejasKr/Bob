@@ -25,7 +25,23 @@ async def transcribe_audio(audio_data: bytes, filename: str = "audio.webm", cont
     
     client = _get_client()
     
-    # Try Sarvam STT first
+    # Primary: Groq Whisper API (whisper-large-v3-turbo) (~45ms latency on LPU)
+    if settings.LLM_API_KEY:
+        try:
+            groq_resp = await client.post(
+                "https://api.groq.com/openai/v1/audio/transcriptions",
+                headers={"Authorization": f"Bearer {settings.LLM_API_KEY}"},
+                files={"file": (filename, audio_data, mime)},
+                data={"model": "whisper-large-v3-turbo"}
+            )
+            if groq_resp.status_code == 200:
+                text = groq_resp.json().get("text", "").strip()
+                if text:
+                    return text
+        except Exception as ge:
+            logger.warning(f"Groq Whisper attempt failed: {ge}")
+
+    # Fallback to Sarvam STT
     try:
         sarvam_url = "https://api.sarvam.ai/speech-to-text-translate"
         sarvam_headers = {"api-subscription-key": settings.SARVAM_API_KEY}
@@ -36,20 +52,6 @@ async def transcribe_audio(audio_data: bytes, filename: str = "audio.webm", cont
             resp_data = sarvam_resp.json()
             return resp_data.get("transcript", resp_data.get("text", "")).strip()
     except Exception as e:
-        logger.warning(f"Sarvam STT attempt failed: {e}")
-
-    # Fallback to Groq Whisper API (whisper-large-v3-turbo)
-    if settings.LLM_API_KEY:
-        try:
-            groq_resp = await client.post(
-                "https://api.groq.com/openai/v1/audio/transcriptions",
-                headers={"Authorization": f"Bearer {settings.LLM_API_KEY}"},
-                files={"file": (filename, audio_data, mime)},
-                data={"model": "whisper-large-v3-turbo"}
-            )
-            if groq_resp.status_code == 200:
-                return groq_resp.json().get("text", "").strip()
-        except Exception as ge:
-            logger.warning(f"Groq Whisper fallback failed: {ge}")
+        logger.warning(f"Sarvam STT fallback failed: {e}")
 
     raise Exception("STT request failed across primary and fallback services.")

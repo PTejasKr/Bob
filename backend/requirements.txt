@@ -4,20 +4,24 @@ pydantic>=2.5.3
 pydantic-settings>=2.1.0
 httpx>=0.26.0
 python-multipart>=0.0.6
-structlog>=24.1.0
 python-dotenv>=1.0.1
-sentence-transformers>=2.3.1
-pandas>=2.1.4
+numpy>=1.26.0
 pyarrow>=15.0.0
+groq>=0.4.1
+
+# Embeddings: ONNX for fast serving, sentence-transformers for offline pipeline
+onnxruntime>=1.17.0
+transformers>=4.37.0
+tokenizers>=0.15.0
+sentence-transformers>=2.3.1
+huggingface-hub>=0.20.0
+
+# Vector DB
+lancedb>=0.5.0
+
+# Dataset loading (offline pipeline only, but needed for install)
+datasets>=2.17.0
+
+# Testing
 pytest>=8.0.0
 pytest-asyncio>=0.23.4
-groq>=0.4.1
-datasets>=2.17.0
-tenacity>=8.2.0
-
-# Added for low-latency stack
-lancedb>=0.5.0
-instructor>=1.2.0
-semantic-router>=0.0.28
-pipecat-ai>=0.0.42
-chonkie>=0.1.0

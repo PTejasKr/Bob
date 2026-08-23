@@ -13,9 +13,11 @@ from app.core.metrics import record_pipeline
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+
 class TextQueryRequest(BaseModel):
     query: str
     top_k: int = 3
+
 
 @router.post("/query", response_model=VoiceQueryResponse)
 async def process_text_query(req: TextQueryRequest):
@@ -36,34 +38,42 @@ async def process_text_query(req: TextQueryRequest):
         )
 
     store = get_store(settings)
-    
-    # Fast Keyword Guardrail via semantic-router
-    t0_g = time.perf_counter()
+
+    # Guardrail check
+    t0 = time.perf_counter()
     matched_route = await asyncio.to_thread(store.check_guardrails, query)
-    metrics.rerank = int((time.perf_counter() - t0_g) * 1000)
+    metrics.rerank = int((time.perf_counter() - t0) * 1000)
 
     if matched_route is not None:
-        logger.warning(f"[{request_id}] Blocked query due to semantic guardrail: {matched_route}")
+        logger.warning(f"[{request_id}] Blocked: guardrail={matched_route}")
         metrics.total = int((time.perf_counter() - t_start) * 1000)
         record_pipeline(metrics, "text")
+
+        answer = "I'm sorry, but I cannot fulfill this request as it is out of scope or violates safety guardrails."
+        if matched_route == "chitchat":
+            answer = f"Hi, I'm {settings.ASSISTANT_NAME}! Ask me anything about the dataset."
+
         return VoiceQueryResponse(
             request_id=request_id,
             transcript=query,
-            answer="I'm sorry, but I cannot fulfill this request as it is out of scope or violates safety guardrails.",
+            answer=answer,
             citations=[],
-            grounded=False,
+            grounded=(matched_route == "chitchat"),
             confidence=0.0,
-            latency_ms=metrics
+            latency_ms=metrics,
         )
 
+    # Retrieval
     t0 = time.perf_counter()
     retrieved_context = await store.retrieve(query, top_k=req.top_k)
     metrics.retrieval = int((time.perf_counter() - t0) * 1000)
 
+    # Generation
     t0 = time.perf_counter()
     gen_result = await generate_answer(query, retrieved_context)
     metrics.generation = int((time.perf_counter() - t0) * 1000)
 
+    # Citation validation
     t0 = time.perf_counter()
     valid_citations = []
     valid_ids = {c["chunk_id"] for c in retrieved_context}
@@ -72,17 +82,22 @@ async def process_text_query(req: TextQueryRequest):
             valid_citations.append(Citation(**cit))
     metrics.validation = int((time.perf_counter() - t0) * 1000)
 
+    # Grounding check
+    grounded = len(retrieved_context) > 0 and gen_result.get("grounded", False)
 
     metrics.total = int((time.perf_counter() - t_start) * 1000)
     record_pipeline(metrics, "text")
-    logger.info(f"[{request_id}] text_pipeline total={metrics.total}ms retrieval={metrics.retrieval}ms generation={metrics.generation}ms")
+    logger.info(
+        f"[{request_id}] text_pipeline total={metrics.total}ms "
+        f"retrieval={metrics.retrieval}ms generation={metrics.generation}ms"
+    )
 
     return VoiceQueryResponse(
         request_id=request_id,
         transcript=query,
         answer=gen_result.get("answer", ""),
         citations=valid_citations,
-        grounded=gen_result.get("grounded", False),
+        grounded=grounded,
         confidence=gen_result.get("confidence", 0.0),
         latency_ms=metrics,
     )

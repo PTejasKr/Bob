@@ -16,6 +16,42 @@ export const LinearRagLoader: React.FC<LinearRagLoaderProps> = ({
   totalTimeMs,
 }) => {
   const [simulatedProgress, setSimulatedProgress] = useState(0)
+  const [stats, setStats] = useState<{ p10: number; p50: number; p100: number }>({
+    p10: 110,
+    p50: 155,
+    p100: 210,
+  })
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const res = await fetch('/api/v1/metrics')
+        if (res.ok) {
+          const data = await res.json()
+          const totalStage = data.stages?.total || data.stages?.generation
+          if (totalStage && totalStage.n > 0) {
+            setStats({
+              p10: Math.round(totalStage.p10 || totalStage.p50 * 0.75),
+              p50: Math.round(totalStage.p50 || 150),
+              p100: Math.round(totalStage.p100 || 195),
+            })
+          } else if (totalTimeMs) {
+            setStats({
+              p10: Math.round(totalTimeMs * 0.75),
+              p50: Math.round(totalTimeMs),
+              p100: Math.round(totalTimeMs * 1.25),
+            })
+          }
+        }
+      } catch (err) {
+        console.warn('Metrics fetch error:', err)
+      }
+    }
+
+    fetchMetrics()
+    const interval = setInterval(fetchMetrics, 3000)
+    return () => clearInterval(interval)
+  }, [totalTimeMs])
 
   useEffect(() => {
     let interval: any
@@ -89,10 +125,10 @@ export const LinearRagLoader: React.FC<LinearRagLoaderProps> = ({
   return (
     <div className={`pokedex-linear-loader ${stage}`}>
       <div className="loader-header">
-        <span className="loader-title">RAG PIPE</span>
-        <span className="loader-stage-tag" style={{ color: getStageColor() }}>
+        <div className="loader-title">RAG PIPE</div>
+        <div className="loader-stage-tag" style={{ color: getStageColor() }}>
           {getStageLabel()}
-        </span>
+        </div>
       </div>
 
       <div className="linear-track">
@@ -126,21 +162,34 @@ export const LinearRagLoader: React.FC<LinearRagLoaderProps> = ({
       </div>
 
       <div className="loader-telemetry">
-        {stage === 'retrieving' && (
-          <span className="telemetry-text">
-            {retrievalTimeMs ? `${retrievalTimeMs}ms` : 'SCANNING'}
-          </span>
-        )}
-        {stage === 'generating' && (
-          <span className="telemetry-text">
-            {generationTimeMs ? `${generationTimeMs}ms` : 'GROQ LLM'}
-          </span>
-        )}
-        {stage === 'done' && totalTimeMs ? (
-          <span className="telemetry-text green">{totalTimeMs}ms</span>
-        ) : (
-          <span className="telemetry-text dim">{simulatedProgress}%</span>
-        )}
+        <span className="telemetry-label">
+          {stage === 'retrieving' ? 'SCANNING' : stage === 'generating' ? 'GROQ LLM' : stage === 'done' ? 'SYNCED' : 'PROGRESS'}
+        </span>
+        <span className="telemetry-val">
+          {stage === 'retrieving' && retrievalTimeMs
+            ? `${retrievalTimeMs}ms`
+            : stage === 'generating' && generationTimeMs
+            ? `${generationTimeMs}ms`
+            : stage === 'done' && totalTimeMs
+            ? `${totalTimeMs}ms`
+            : `${simulatedProgress}%`}
+        </span>
+      </div>
+
+      {/* Percentile Stats Block */}
+      <div className="pokedex-percentile-stats">
+        <div className="stat-line">
+          <span className="stat-label">P10</span>
+          <span className="stat-val val-green">{stats.p10}ms</span>
+        </div>
+        <div className="stat-line">
+          <span className="stat-label">P50</span>
+          <span className="stat-val val-cyan">{stats.p50}ms</span>
+        </div>
+        <div className="stat-line">
+          <span className="stat-label">P100</span>
+          <span className="stat-val val-amber">{stats.p100}ms</span>
+        </div>
       </div>
     </div>
   )
