@@ -43,7 +43,7 @@ export function PokedexChassis({
   onPlaySpeech,
   onScrollUp,
   onScrollDown,
-}) => {
+}: PokedexChassisProps) {
   const [activeTab, setActiveTab] = React.useState<number>(0)
 
   const handleDpadLeft = () => {
