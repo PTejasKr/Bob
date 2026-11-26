@@ -9,6 +9,8 @@ interface LinearRagLoaderProps {
   totalTimeMs?: number
 }
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+
 export const LinearRagLoader: React.FC<LinearRagLoaderProps> = ({
   stage,
   retrievalTimeMs,
@@ -25,7 +27,7 @@ export const LinearRagLoader: React.FC<LinearRagLoaderProps> = ({
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const res = await fetch('/api/v1/metrics')
+        const res = await fetch(`${API_BASE}/api/v1/metrics`)
         if (res.ok) {
           const data = await res.json()
           const totalStage = data.stages?.total || data.stages?.generation

@@ -82,12 +82,14 @@ if frontend_dist.exists():
             async def serve_static(path=sf):
                 return FileResponse(path)
 
+    frontend_dist_resolved = frontend_dist.resolve()
+
     @app.get("/{full_path:path}")
     async def serve_frontend(full_path: str):
-        file_path = frontend_dist / full_path
-        if file_path.exists() and file_path.is_file():
+        file_path = (frontend_dist_resolved / full_path).resolve()
+        if file_path.is_relative_to(frontend_dist_resolved) and file_path.exists() and file_path.is_file():
             return FileResponse(file_path)
-        return FileResponse(frontend_dist / "index.html")
+        return FileResponse(frontend_dist_resolved / "index.html")
 
 
 if __name__ == "__main__":

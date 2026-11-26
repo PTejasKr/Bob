@@ -6,6 +6,8 @@ import type { ChatMessage } from './components/PokedexScreenChat'
 import type { RagStage } from './components/LinearRagLoader'
 import { useVAD } from './hooks/useVAD'
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+
 function App() {
   const [isOpen, setIsOpen] = useState(true)
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -121,10 +123,14 @@ function App() {
 
   useEffect(() => {
     // Connect WebSocket
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = window.location.hostname
-    const port = host === 'localhost' || host === '127.0.0.1' ? ':8000' : ''
-    const wsUrl = `${protocol}//${host}${port}/api/v1/voice/ws`
+    const wsUrl = API_BASE
+      ? `${API_BASE.replace(/^http/, 'ws')}/api/v1/voice/ws`
+      : (() => {
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+          const host = window.location.hostname
+          const port = host === 'localhost' || host === '127.0.0.1' ? ':8000' : ''
+          return `${protocol}//${host}${port}/api/v1/voice/ws`
+        })()
     
     try {
       const ws = new WebSocket(wsUrl)
@@ -281,7 +287,7 @@ function App() {
           try {
             const formData = new FormData()
             formData.append('audio', audioBlob, 'recording.webm')
-            const res = await fetch('/api/v1/voice/query', {
+            const res = await fetch(`${API_BASE}/api/v1/voice/query`, {
               method: 'POST',
               body: formData,
             })
@@ -379,7 +385,7 @@ function App() {
     setRagStage('retrieving')
 
     try {
-      const res = await fetch('/api/v1/text/query', {
+      const res = await fetch(`${API_BASE}/api/v1/text/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: text, top_k: 3 }),

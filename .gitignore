@@ -23,6 +23,8 @@ build/
 node_modules/
 frontend/dist/
 .eslintcache
+.vercel
+.env.local
 
 # Media & Videos
 *.mp4
