@@ -4,7 +4,7 @@
 ### Sub-150ms Voice-Enabled Retrieval-Augmented Generation Assistant
 
 <p align="center">
-  <a href="https://frontend-psi-swart-66.vercel.app"><img src="https://img.shields.io/badge/Live-Vercel%20Frontend-0070F3?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Frontend" /></a>
+  <a href="https://bob-pokedex.vercel.app"><img src="https://img.shields.io/badge/Live-bob--pokedex.vercel.app-0070F3?style=for-the-badge&logo=vercel&logoColor=white" alt="Live App" /></a>
   <img src="https://img.shields.io/badge/Latency-Sub--150ms-cyan?style=for-the-badge" alt="Latency Target" />
   <img src="https://img.shields.io/badge/Dataset-MSMARCO--XI-ffcc00?style=for-the-badge" alt="Dataset" />
   <img src="https://img.shields.io/badge/Inference-Groq%20LPU-orange?style=for-the-badge" alt="Groq LPU" />
@@ -107,7 +107,7 @@ Open `http://localhost:8000` in your browser (FastAPI serves both `/api/v1/*` an
 
 ## ☁️ Deployment
 
-* **Frontend (Vercel Free Tier):** [https://frontend-psi-swart-66.vercel.app](https://frontend-psi-swart-66.vercel.app)
+* **Full-Stack (Vercel Free Tier):** [https://bob-pokedex.vercel.app](https://bob-pokedex.vercel.app) (`/health`, `/api/v1/*`, and React UI)
 * **Full-Stack Container (Fly.io):** Configured via `Dockerfile` and `fly.toml` (`fly deploy`).
 
 ---

@@ -50,3 +50,4 @@ data/*.sqlite-*
 .tmp/
 .DS_Store
 Thumbs.db
+.env*

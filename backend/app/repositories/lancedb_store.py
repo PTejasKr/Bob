@@ -17,9 +17,7 @@ _backend_dir = Path(__file__).resolve().parents[2]
 if str(_backend_dir) not in sys.path:
     sys.path.insert(0, str(_backend_dir))
 
-from retrieval.engine import RetrievalEngine  # noqa: E402
-
-_store_instance: RetrievalEngine | None = None
+_store_instance = None
 
 
 def _resolve_db_path() -> str:
@@ -46,17 +44,18 @@ def _resolve_db_path() -> str:
     return fallback
 
 
-def get_store(settings=None) -> RetrievalEngine:
+def get_store(settings=None):
     """Get or create the singleton RetrievalEngine."""
     global _store_instance
     if _store_instance is None:
+        from retrieval.engine import RetrievalEngine  # noqa: E402
         db_path = _resolve_db_path()
         logger.info(f"Creating RetrievalEngine at {db_path}")
         _store_instance = RetrievalEngine(db_path=db_path)
     return _store_instance
 
 
-def initialize_store(settings=None) -> RetrievalEngine:
+def initialize_store(settings=None):
     """Create the store AND eagerly load models + warm up. Call at app startup."""
     engine = get_store(settings)
     engine.initialize()

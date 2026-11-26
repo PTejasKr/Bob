@@ -37,11 +37,15 @@ async def process_text_query(req: TextQueryRequest):
             latency_ms=metrics,
         )
 
-    store = get_store(settings)
+    try:
+        store = get_store(settings)
+    except Exception as e:
+        logger.warning(f"[{request_id}] Retrieval store unavailable ({e}); using fallback mode.")
+        store = None
 
     # Guardrail check
     t0 = time.perf_counter()
-    matched_route = await asyncio.to_thread(store.check_guardrails, query)
+    matched_route = await asyncio.to_thread(store.check_guardrails, query) if store else None
     metrics.rerank = int((time.perf_counter() - t0) * 1000)
 
     if matched_route is not None:
@@ -65,7 +69,7 @@ async def process_text_query(req: TextQueryRequest):
 
     # Retrieval
     t0 = time.perf_counter()
-    retrieved_context = await store.retrieve(query, top_k=req.top_k)
+    retrieved_context = await store.retrieve(query, top_k=req.top_k) if store else []
     metrics.retrieval = int((time.perf_counter() - t0) * 1000)
 
     # Generation

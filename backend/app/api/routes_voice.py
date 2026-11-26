@@ -55,8 +55,12 @@ async def process_voice_query(audio: UploadFile = File(...)):
 
     # Guardrail
     t0 = time.perf_counter()
-    store = get_store(settings)
-    route = await asyncio.to_thread(store.check_guardrails, transcript)
+    try:
+        store = get_store(settings)
+    except Exception as e:
+        logger.warning(f"[{request_id}] Retrieval store unavailable ({e}); using fallback mode.")
+        store = None
+    route = await asyncio.to_thread(store.check_guardrails, transcript) if store else None
     lm.rerank = int((time.perf_counter() - t0) * 1000)
 
     if route is not None:
@@ -79,7 +83,7 @@ async def process_voice_query(audio: UploadFile = File(...)):
 
     # Retrieval
     t0 = time.perf_counter()
-    retrieved_context = await store.retrieve(transcript, top_k=3)
+    retrieved_context = await store.retrieve(transcript, top_k=3) if store else []
     lm.retrieval = int((time.perf_counter() - t0) * 1000)
 
     # Generation
