@@ -1,4 +1,4 @@
-﻿import time
+import time
 import statistics
 import logging
 from .engine import RetrievalEngine
