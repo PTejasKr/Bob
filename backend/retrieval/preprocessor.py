@@ -1,4 +1,4 @@
-﻿import unicodedata
+import unicodedata
 import re
 from typing import List, Dict, Any
 

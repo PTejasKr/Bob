@@ -42,15 +42,15 @@ queries = [
 
 print("\n--- Retrieval-only micro-bench (warm) ---")
 # warmup — first encode is ~140ms cold, then ~23ms
-asyncio.run(store.retrieve(queries[0], top_k=3)
+asyncio.run(store.retrieve(queries[0], top_k=3))
 for q in queries:
     t0=time.perf_counter()
-    res = asyncio.run(store.retrieve(q, top_k=3)
+    res = asyncio.run(store.retrieve(q, top_k=3))
     ms=(time.perf_counter()-t0)*1000
     print(f"  hybrid_search({q!r:40s}) {ms:6.1f}ms  -> {len(res)} chunks")
     # second hit should be cached (embedding cache)
     t0=time.perf_counter()
-    res2 = asyncio.run(store.retrieve(q, top_k=3)
+    res2 = asyncio.run(store.retrieve(q, top_k=3))
     ms2=(time.perf_counter()-t0)*1000
     print(f"    (cached embedding)               {ms2:6.1f}ms")
 

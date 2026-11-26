@@ -98,8 +98,15 @@ def build_lancedb(rebuild=False):
 
     rows = []
     with open(CORPUS, encoding="utf-8") as f:
-        for line in f:
-            doc = json.loads(line)
+        for line_no, line in enumerate(f, 1):
+            raw = line.strip()
+            if not raw:
+                continue
+            try:
+                doc = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                log(f"Skipping malformed JSON on line {line_no}: {exc}")
+                continue
             parents = split_words(doc["text"], PARENT_WORDS, PARENT_WORDS)
             for pi, parent in enumerate(parents):
                 children = split_words(parent, CHILD_WORDS, CHILD_STRIDE)
